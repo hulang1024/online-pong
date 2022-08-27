@@ -1,13 +1,17 @@
-import Player from "../play/player";
-import User, { NullUser } from "../user";
+import Game from "../gameplay/game";
+import Player from "../gameplay/player";
+import User from "../user/user";
 
-let RoomId = 10;
+let RoomId = 0;
 
 export default class Room {
   id: number;
-  creator: User = NullUser;
+  creator: User = User.Null;
   createAt: number = 0;
+  game: Game | null = null;
   players: Player[] = [];
+
+  static readonly Null = new Room();
 
   constructor() {
     this.id = RoomId++;
@@ -22,20 +26,12 @@ export default class Room {
   part(player: Player) {
     this.players = this.players.filter((p) => p != player);
   }
-}
 
-export class RoomManager {
-  rooms = new Map<number, Room>();
-
-  create() {
-    const room = new Room();
-    this.rooms.set(room.id, room);
-    return room;
+  isFull() {
+    return false;
   }
 
-  get(id: number) {
-    return this.rooms.get(id);
+  countPlayer() {
+    return this.players.length;
   }
 }
-
-export const NullRoom = new Room();

@@ -1,9 +1,8 @@
 import { Request, Response, Router } from "express";
-import Player from "../play/player";
 import GameServer from "../game-server";
-import { UserRequest } from "./user-controller";
+import { AuthRequest } from "../api/auth";
 
-export class RoomController {
+export default class RoomController {
   server: GameServer;
 
   constructor(router: Router, server: GameServer) {
@@ -11,71 +10,62 @@ export class RoomController {
     router.post('/room', this.create.bind(this));
     router.put('/room/:room_id/users/:user_id', this.join.bind(this));
     router.delete('/room/:room_id/users/:user_id', this.part.bind(this));
+    router.get('/room/:room_id/users', this.getUsers.bind(this));
   }
 
   create(req: Request, res: Response) {
-    const user = (req as UserRequest).user;
+    const user = (req as AuthRequest).auth.user;
     const room = this.server.roomManager.create();
     room.createAt = new Date().getTime();
     room.creator = user;
-    res.status(200).send(room);
+    const ret = this.server.roomManager
+      .join(user, room.id, this.server.playerManager);
+    if (ret == 0) {
+      res.status(200).send({id: room.id});
+    } else {
+      res.status(400).send({ code: ret });
+    }
   }
 
   join(req: Request, res: Response) {
     const userId = +req.params.user_id;
     const roomId = +req.params.room_id;
-    const user = (req as UserRequest).user;
+    const user = (req as AuthRequest).auth.user;
     if (userId != user.id) {
-      res.status(400).end();
-      return;
+      return res.status(400).end();
     }
 
-    // 检查指定房间是否存在
-    const roomToJoin = this.server.roomManager.get(roomId);
-    if (roomToJoin == null) {
-      res.status(400).end();
-      return;
+    const ret = this.server.roomManager
+      .join(user, roomId, this.server.playerManager);
+    if (ret == 0) {
+      res.status(200).end();
+    } else {
+      res.status(400).send({ code: ret });
     }
-
-    // 加入后成为 Player
-    let player = this.server.playerManager.get(user.id);
-    if (!player) {
-      player = new Player(user);
-    }
-
-    if (player.joinedRoom()) {
-      // 退出已加入的其它房间
-      player.room.part(player);
-    }
-
-    // 加入
-    roomToJoin.join(player);
-
-    res.status(200).end();
   }
 
   part(req: Request, res: Response) {
     const userId = +req.params.user_id;
     const roomId = +req.params.room_id;
-    const user = (req as UserRequest).user;
+    const user = (req as AuthRequest).auth.user;
     if (userId != user.id) {
-      res.status(400).end();
-      return;
+      return res.status(400).end();
     }
 
-    const roomToPart = this.server.roomManager.get(roomId);
-    if (roomToPart == null) {
-      res.status(400).end();
-      return;
+    this.server.roomManager.part(user, roomId, this.server.playerManager);
+  }
+
+  getUsers(req: Request, res: Response) {
+    const roomId = +req.params.room_id;
+    const room = this.server.roomManager.get(roomId);
+    if (!room) {
+      return res.status(400).end();
     }
 
-    const player = this.server.playerManager.get(user.id);
-    if (player && player.room.id == roomToPart.id) {
-      roomToPart.part(player);
-      player.quitGame();
-      res.status(200).end();
-    } else {
-      res.status(400).end();
-    }
+    const apiPlayers = room.players.map((player) => ({
+      id: player.id,
+      online: player.isOnline(),
+    }));
+    res.status(200).send(apiPlayers);
   }
 }

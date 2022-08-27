@@ -20,10 +20,10 @@ export default class MainLoop {
     }
 
     const delta = 1000 / 60;
-
+    const { objects } = this;
     const loop = () => {
-      for (let i = 0; i < this.objects.length; i++) {
-        this.objects[i].fixedUpdate(delta);
+      for (let i = 0; i < objects.length; i++) {
+        objects[i].fixedUpdate(delta);
       }
     };
 
@@ -31,12 +31,20 @@ export default class MainLoop {
   }
 
   add(o: FixedUpdatable) {
-    this.objects.push(o);
+    if (!this.objects.includes(o)) {
+      this.objects.push(o);
+      this.startLoop();
+    }
   }
 
   remove(o: FixedUpdatable) {
     const i = this.objects.indexOf(o);
-    i >= 0 && this.objects.splice(i, 1);
+    if (i >= 0) {
+      this.objects.splice(i, 1);
+      if (!this.objects.length) {
+        this.stopLoop();
+      }
+    }
   }
 }
 
