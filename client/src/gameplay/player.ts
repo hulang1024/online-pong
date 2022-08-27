@@ -1,47 +1,58 @@
-import Vector2 from "./vector.js";
+import InputKey from "./input/input-key";
+import InputState from "./input/Input-state";
+import Vector2 from "./vector";
+import Viewport from "./viewport";
 
 export default class Player {
-  constructor(viewport, isLocalPlayer = false) {
-    this.position = Vector2.Zero();
-    this.velocity = Vector2.Zero();
-    this.maxSpeed = 9 * 62;
-    this.minSpeed = 3 * 62;
-    // 加速
-    this.accele = 1 * 62;
-    // 减速
-    this.friction = 0.25 * 62;
-    this.size = 30;
-    this.viewport = viewport;
-    this.context2d = null;
+  readonly position = Vector2.Zero;
+  private size = 30;
+  private velocity = Vector2.Zero;
+  private maxSpeed = 9 * 62;
+  private minSpeed = 3 * 62;
+  private accele = 1 * 62;
+  private friction = 0.25 * 62;
+  readonly viewport: Viewport;
+  context2d: CanvasRenderingContext2D;
+
+  readonly isLocalPlayer: boolean;
+
+  readonly id: number;
+  readonly color: string;
+
+  constructor(id: number, color: string,
+    isLocalPlayer = false, viewport: Viewport) {
+    this.id = id;
     this.isLocalPlayer = isLocalPlayer;
+    this.viewport = viewport;
+    this.color = color;
   }
 
-  update(delta, inputs) {
-    if (inputs[1]) {
+  fixedUpdate(delta: number, input: InputState) {
+    if (input.isPressed(InputKey.Right)) {
       this.velocity.x = this.velocity.x == 0
         ? this.minSpeed
         : Math.min(this.maxSpeed, this.velocity.x + this.accele);
       this.velocity.y = 0;
-    } else if (inputs[3]) {
+    } else if (input.isPressed(InputKey.Left)) {
       this.velocity.x = this.velocity.x == 0
         ? -this.minSpeed
         :  Math.max(-this.maxSpeed, this.velocity.x - this.accele);
       this.velocity.y = 0;
     }
-    if (inputs[0]) {
+    if (input.isPressed(InputKey.Up)) {
       this.velocity.x = 0;
       this.velocity.y = this.velocity.y == 0
         ? -this.minSpeed
         : Math.max(-this.maxSpeed, this.velocity.y - this.accele);
-    } else if (inputs[2]) {
+    } else if (input.isPressed(InputKey.Down)) {
       this.velocity.x = 0;
       this.velocity.y = this.velocity.y == 0
         ? this.minSpeed
         : Math.min(this.maxSpeed, this.velocity.y + this.accele);
     }
 
-    this.position.x += Math.floor(this.velocity.x * delta);
-    this.position.y += Math.floor(this.velocity.y * delta);
+    this.position.x += this.velocity.x * delta;
+    this.position.y += this.velocity.y * delta;
 
     if (this.velocity.x > 0) {
       this.velocity.x = Math.max(this.velocity.x - this.friction, 0);
@@ -71,7 +82,7 @@ export default class Player {
   }
 
   draw() {
-    this.context2d.fillStyle = this.id == 1 ? '#0011ff' : '#ff1100';
+    this.context2d.fillStyle = this.color;
     this.context2d.fillRect(
       this.position.x, this.position.y, this.size, this.size);
   }

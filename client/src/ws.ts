@@ -1,0 +1,53 @@
+import APIAccess from "./api/api";
+
+type MessageListener = (data: any) => void;
+
+export default class SocketClient {
+  ws: WebSocket;
+  messageListeners: MessageListener[] = [];
+
+  constructor(apiAccess: APIAccess) {
+    const ws = new WebSocket('ws://' + location.hostname + ':9999');
+    this.ws = ws;
+    ws.onopen = (ev) => {
+      console.log('socket open');
+      this.send({ type: 'auth', token: apiAccess.token });
+    };
+    ws.onclose = (ev) => {
+      console.log('close', ev);
+    };
+    ws.onerror = (ev) => {
+      console.log('error', ev);
+    };
+    ws.onmessage = (event) => {
+      let msg: any;
+      if (event.data instanceof Blob) {
+        msg = event.data;
+      } else if (typeof event.data == 'string') {
+        msg = JSON.parse(event.data);
+
+        if (msg.type == 'auth') {
+          if (msg.code == 1) {
+            apiAccess.resetToken();
+            apiAccess.auth().then(() => {
+              this.send({ type: 'auth', token: apiAccess.token });
+            });
+          }
+        }
+      }
+      this.messageListeners.forEach((l) => l(msg));
+    };
+  }
+
+  onMessage(l: MessageListener) {
+    this.messageListeners.push(l);
+  }
+
+  sendBinary(data: ArrayBuffer) {
+    this.ws.send(data);
+  }
+
+  send(message: any) {
+    this.ws.send(JSON.stringify(message));
+  }
+}
