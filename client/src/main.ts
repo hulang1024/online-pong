@@ -31,8 +31,8 @@ window.addEventListener('load', () => {
       mainLoop.objects.push(game);
       mainLoop.start();
     })
-    .catch(() => {
+    .catch((e) => {
+      console.error(e);
       alert('验证失败');
     });
-
 });

@@ -35,7 +35,7 @@ export default class ServerUpdateFrame {
       // 对所有玩家
       let offset = 6;
       for (let p = 0; p < players.length; p++) {
-        if (!players[p].isLocalPlayer) {
+        //if (!players[p].isLocalPlayer) {
           // 读输入帧的数量（本地玩家的未传输，跳过）
           const frameCount =  dv.getUint8(offset++);
           const inputFrames = [];
@@ -54,7 +54,7 @@ export default class ServerUpdateFrame {
           }
           serverUpdateFrame.playerInputFrames.set(players[p].id, inputFrames);
           console.log(serverUpdateFrame.playerInputFrames.size);
-        }
+        //}
       }
       complete(serverUpdateFrame);
     };

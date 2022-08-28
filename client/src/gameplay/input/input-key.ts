@@ -1,5 +1,5 @@
 enum InputKey {
-  Enter,
+  Enter = 1,
   Space,
   Up, Right, Down, Left,
   Num0 = 48,
