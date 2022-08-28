@@ -5,7 +5,7 @@ import User from "../user/user";
 export const SECRET_KEY = '777';
 
 export function createToken(user: User) {
-  return jwt.sign({ user }, SECRET_KEY, { expiresIn: '3h' });
+  return jwt.sign({ user }, SECRET_KEY, { expiresIn: '365d' });
 }
 
 export function verifyToken(token: string): string | jwt.JwtPayload {

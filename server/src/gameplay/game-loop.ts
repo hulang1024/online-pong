@@ -46,20 +46,20 @@ export default class GameLoop implements FixedUpdatable {
     // 遍历房间内所有玩家
     players.forEach((player) => {
       const updateFrame = new ArrayBuffer(6
-        + (players.length - 1)
-        + (players.length - 1) * this.intervel * 4);
+        + (players.length - 0)
+        + (players.length - 0) * this.intervel * 4);
       const dv = new DataView(updateFrame);
       dv.setUint32(0, this.frameNo, true);
       dv.setUint32(3, this.frameNo + this.intervel, true);
       let offset = 6;
       if (this.frameNo < this.intervel * 2) {
         players.forEach((other) => {
-          if (other != player)
+          //if (other != player)
             dv.setUint8(offset++,  0);
         });
       } else {
         players.forEach((other) => {
-          if (other != player) {
+          //if (other != player) {
             dv.setUint8(offset++,  this.intervel);
             const otherFrames = other.frames;
             // 读倒数第n个，注意：此种方式未判断帧号，依赖于前端在锁定第n个帧时不推送输入
@@ -69,7 +69,7 @@ export default class GameLoop implements FixedUpdatable {
               dv.setUint32(offset, frame, true);
               offset += 4;
             }
-          }
+          //}
         });
       }
       // 发送同房间其它玩家的帧
