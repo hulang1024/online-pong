@@ -1,10 +1,11 @@
 import Game from "../game";
-import InputKey from "../input/input-key";
+import { GameButton } from "../game-input";
 import Player from "../player";
 import { randomRange } from "../random";
 import Scene from "./scene";
 
 export class ServeScene extends Scene {
+  // 发球者
   server: Player;
   constructor(game: Game) {
     super('serve', game);
@@ -15,7 +16,7 @@ export class ServeScene extends Scene {
   }
 
   update(_: number) {
-    if (!this.server.lastInputState.isPressed(InputKey.Space)) {
+    if (!this.server.lastButtonStates.isPressed(GameButton.Serve)) {
       return;
     }
     const { ball } = this.game;

@@ -1,5 +1,6 @@
 import Game from "./game";
 import { checkCircleAndRectCollision } from "./physics";
+import { random, randomRange } from "./random";
 import Vector2 from "./vector";
 import Viewport from "./viewport";
 
@@ -26,13 +27,13 @@ export default class Ball {
     this.position.x += this.vel.x * delta;
     this.position.y += this.vel.y * delta;
 
-    for (let i = 0; i < this.game.paddles.length; i++) {
-      if (checkCircleAndRectCollision(this, this.game.paddles[i])) {
-        const paddle = this.game.paddles[i];
+    for (let i = 0; i < this.game.players.length; i++) {
+      const paddle = this.game.players[i].paddle;
+      if (checkCircleAndRectCollision(this, paddle)) {
         this.position.y -= this.vel.y * delta;
         this.position.x -= this.vel.x * delta;
-        this.vel.x = -this.vel.x * 1.2;
-        this.vel.y = -this.vel.y * 1.2;
+        this.vel.x = -this.vel.x * randomRange(1, 2);
+        this.vel.y = -this.vel.y * randomRange(1, 2);
         break;
       }
     }
@@ -46,17 +47,17 @@ export default class Ball {
 
     if (this.position.x - this.radius < 0) {
       this.position.x = this.radius;
-      this.vel.x = -this.vel.x;
+      this.vel.x = -this.vel.x * randomRange(1, 1.1);
     } else if (this.position.x > this.game.viewport.width - this.radius) {
       this.position.x = this.game.viewport.width - this.radius;
-      this.vel.x = -this.vel.x;
+      this.vel.x = -this.vel.x * randomRange(1, 1.1);
     }
     if (this.position.y - this.radius < 0) {
       this.position.y = this.radius;
-      this.vel.y = -this.vel.y;
+      this.vel.y = -this.vel.y * randomRange(1, 1.1);
     } else if (this.position.y > this.viewport.height - this.radius) {
       this.position.y = this.viewport.height - this.radius;
-      this.vel.y = -this.vel.y;
+      this.vel.y = -this.vel.y * randomRange(1, 1.1);
     }
   }
 

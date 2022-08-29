@@ -34,13 +34,15 @@ window.addEventListener('load', () => {
           // start会发多次
           if (!game.isStarted) {
             apiAccess.http.get(`/room/${roomId}/users`).then((ret) => {
-              game.start(ret.data as Player[]);
+              game.start(ret.data.map((p: any) => new Player(p.id)));
             });
           }
         } else if (msg.type == 'pause') {
-          alert('游戏暂停');
+          console.log('游戏暂停');
         } else if (msg.type == 'stop') {
-          alert('游戏停止');
+          console.log('游戏停止');
+        } else if (msg.type == 'resume') {
+          console.log('游戏停止');
         } else if (msg.type.startsWith('room')) {
           if (msg.type == 'room.user.offline') {
             const user = msg.data as User;

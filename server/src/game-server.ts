@@ -48,7 +48,7 @@ export default class GameServer {
       ws.on('message', (data: RawData, isBinary: boolean) => {
         if (isBinary) {
           // 只有帧同步数据用二进制
-          gameLoop?.addInputFrame(data as Buffer, player!);
+          gameLoop?.receiveFrameInput(data as Buffer, player!);
         } else {
           let authResult = 1;
           const msg = JSON.parse(data.toString()) as MessageEvent;

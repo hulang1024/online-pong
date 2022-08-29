@@ -12,7 +12,8 @@ export default class APIAccess {
   readonly http: AxiosInstance = axios.create();
 
   constructor() {
-    this.http.defaults.baseURL = '/pong-api';
+    this.http.defaults.baseURL =
+      location.hostname == 'localhost' ? 'http://localhost:8888' : '/pong-api';
     this.http.defaults.headers.post['Content-Type']
       = 'application/x-www-form-urlencoded';
     // 请求拦截器

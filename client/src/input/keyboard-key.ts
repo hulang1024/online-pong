@@ -1,4 +1,4 @@
-enum InputKey {
+enum KeyboardKey {
   Enter = 1,
   Space,
   Up, Right, Down, Left,
@@ -8,22 +8,22 @@ enum InputKey {
   B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 };
 
-export default InputKey;
+export default KeyboardKey;
 
 export function fromKeyboardEvent(e: KeyboardEvent) {
   switch (e.key) {
     case 'Enter':
-      return InputKey.Enter;
+      return KeyboardKey.Enter;
     case ' ':
-      return InputKey.Space;
+      return KeyboardKey.Space;
     case 'ArrowLeft':
-      return InputKey.Left;
+      return KeyboardKey.Left;
     case 'ArrowRight':
-      return InputKey.Right;
+      return KeyboardKey.Right;
     case 'ArrowUp':
-      return InputKey.Up;
+      return KeyboardKey.Up;
     case 'ArrowDown':
-      return InputKey.Down;
+      return KeyboardKey.Down;
   }
   if (e.key.length == 1) {
     let key = null;

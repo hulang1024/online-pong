@@ -12,7 +12,8 @@ export default class SocketClient {
   messageListeners: MessageListener[] = [];
 
   constructor(apiAccess: APIAccess) {
-    const ws = new WebSocket('ws://' + location.hostname + '/pong-ws');
+    const ws = new WebSocket('ws://' + location.hostname
+      + (location.hostname == 'localhost' ? ':9999' : '/pong-ws'));
     this.ws = ws;
     ws.onopen = (ev) => {
       console.log('socket open');

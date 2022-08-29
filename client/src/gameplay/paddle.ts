@@ -1,6 +1,6 @@
 import Game from "./game";
-import InputKey from "./input/input-key";
-import InputState from "./input/Input-state";
+import ButtonStates from "../input/button-states";
+import { GameButton } from "./game-input";
 import Vector2 from "./vector";
 import Viewport from "./viewport";
 
@@ -27,10 +27,10 @@ export default class Paddle {
     this.color = color;
   }
 
-  fixedUpdate(delta: number, input: InputState) {
-    if (input.isPressed(InputKey.Right)) {
+  fixedUpdate(delta: number, input: ButtonStates<GameButton>) {
+    if (input.isPressed(GameButton.Right)) {
       this.dx = this.speed;
-    } else if (input.isPressed(InputKey.Left)) {
+    } else if (input.isPressed(GameButton.Left)) {
       this.dx = -this.speed;
     } else {
       this.dx = 0;

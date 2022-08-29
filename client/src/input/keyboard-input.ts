@@ -1,19 +1,18 @@
-import InputKey, { fromKeyboardEvent } from "./input-key";
-import InputState from "./Input-state";
+import KeyboardKey, { fromKeyboardEvent } from "./keyboard-key";
+import ButtonStates from "./button-states";
 
-type KeyListener = (key: InputKey) => void;
+type KeyListener = (key: KeyboardKey) => void;
 
 const pressedListeners = new Set<KeyListener>();
 const releasedListeners = new Set<KeyListener>();
-const inputState = new InputState();
+const keyStates = new ButtonStates<KeyboardKey>();
 
 document.addEventListener('keydown', (e) => {
   const key = fromKeyboardEvent(e);
   if (!key) {
     return;
   }
-  if (!inputState.isPressed(key)) {
-    inputState.pressedKeys.add(key);
+  if (keyStates.setPressed(key, true)) {
     pressedListeners.forEach((l) => {
       l(key);
     });
@@ -25,16 +24,16 @@ document.addEventListener('keyup', (e) => {
   if (!key) {
     return;
   }
-  if (inputState.release(key)) {
+  if (keyStates.setPressed(key, false)) {
     releasedListeners.forEach((l) => {
       l(key);
     });
   }
 });
 
-const Input = {
-  state: inputState,
-  isPressed: inputState.isPressed.bind(inputState),
+const KeyboardInput = {
+  state: keyStates,
+  isPressed: keyStates.isPressed.bind(keyStates),
   addKeyListener(pressedL: KeyListener, releasedL: KeyListener) {
     if (pressedL) {
       pressedListeners.add(pressedL);
@@ -44,4 +43,4 @@ const Input = {
     }
   }
 };
-export default Input;
+export default KeyboardInput;

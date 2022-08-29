@@ -1,11 +1,18 @@
-import InputFrame from "./input-frame";
-import InputState from "./input/Input-state";
+import ButtonStates from "../input/button-states";
+import { GameButton } from "./game-input";
+import Paddle from "./paddle";
 
 export default class Player {
   id: number;
 
-  // 玩家的InputFrame的缓冲区
-  inputFrameQueue: InputFrame[] = [];
+  frameInputQueue: ButtonStates<GameButton>[] = [];
   // 最近一个输入
-  lastInputState: InputState = InputState.EMPTY;
+  lastButtonStates: ButtonStates<GameButton>
+    = ButtonStates.EMPTY as ButtonStates<GameButton>;
+
+  paddle: Paddle;
+
+  constructor(id: number) {
+    this.id = id;
+  }
 }
