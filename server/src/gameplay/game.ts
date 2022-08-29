@@ -4,22 +4,28 @@ import GameLoop from "./game-loop";
 
 export default class Game {
   room: Room;
+  server: GameServer;
   gameLoop: GameLoop;
   state = GameState.Ready;
 
-  constructor(room: Room) {
+  constructor(room: Room, server: GameServer) {
     this.room = room;
+    this.server = server;
     room.game = this;
     this.gameLoop = new GameLoop(this);
   }
 
-  start(server: GameServer) {
+  start() {
+    if (this.room.players.some((player) => !player.isReadyRecvFrame)) {
+      this.room.broadcastMsg({ type: 'start' });
+      return;
+    }
     this.room.players.forEach((player) => {
       player.frames = [];
     });
-    server.mainLoop.add(this.gameLoop);
+    this.server.mainLoop.add(this.gameLoop);
+    this.gameLoop.isPause = false;
     this.state = GameState.Playing;
-    this.broadcast({ type: 'start' });
   }
 
   pause() {
@@ -28,7 +34,7 @@ export default class Game {
     }
     this.state = GameState.Paused;
     this.gameLoop.isPause = true;
-    this.broadcast({ type: 'pause' });
+    this.room.broadcastMsg({ type: 'pause' });
   }
 
   resume() {
@@ -37,17 +43,13 @@ export default class Game {
     }
     this.state = GameState.Playing;
     this.gameLoop.isPause = false;
-    this.broadcast({ type: 'resume' });
+    this.room.broadcastMsg({ type: 'resume' });
   }
 
   free(server: GameServer) {
     server.mainLoop.remove(this.gameLoop);
-  }
-
-  private broadcast(msg: any) {
-    this.room.players.forEach((player) => {
-      player.send(JSON.stringify(msg));
-    });
+    server.roomManager.delete(this.room, server.playerManager);
+    server.gameManager.delete(this);
   }
 }
 
@@ -58,11 +60,15 @@ export enum GameState {
 }
 
 export class GameManager {
-  games = new Set();
+  private games = new Set();
 
-  create(room: Room) {
-    const game = new Game(room);
+  create(room: Room, server: GameServer) {
+    const game = new Game(room, server);
     this.games.add(game);
     return game;
+  }
+
+  delete(game: Game) {
+    this.games.delete(game);
   }
 }

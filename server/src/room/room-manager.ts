@@ -60,6 +60,7 @@ export default class RoomManager {
     const player = playerManager.get(user.id);
     if (player && player.room.id == room.id) {
       room.part(player);
+      playerManager.delete(player.id);
       player.quitGame();
       return 0;
     } else {
@@ -69,5 +70,12 @@ export default class RoomManager {
 
   get(id: number) {
     return this.rooms.get(id);
+  }
+
+  delete(room: Room, playerManager: PlayerManager) {
+    room.players.forEach((player) => {
+      playerManager.delete(player.id);
+    });
+    return this.rooms.delete(room.id);
   }
 }

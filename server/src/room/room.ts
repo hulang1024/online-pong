@@ -34,4 +34,16 @@ export default class Room {
   countPlayer() {
     return this.players.length;
   }
+
+  broadcast(data: any) {
+    this.players.forEach((player) => {
+      player.send(data);
+    });
+  }
+
+  broadcastMsg(msg: any) {
+    this.players.forEach((player) => {
+      player.send(JSON.stringify(msg));
+    });
+  }
 }

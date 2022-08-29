@@ -1,13 +1,18 @@
 import APIAccess from "./api/api";
 
-type MessageListener = (data: any) => void;
+export class MsgEvent {
+  type: string;
+  data: any;
+}
+
+type MessageListener = (msg: MsgEvent | Blob) => void;
 
 export default class SocketClient {
   ws: WebSocket;
   messageListeners: MessageListener[] = [];
 
   constructor(apiAccess: APIAccess) {
-    const ws = new WebSocket('ws://' + location.hostname + ':9999');
+    const ws = new WebSocket('ws://' + location.hostname + '/pong-ws');
     this.ws = ws;
     ws.onopen = (ev) => {
       console.log('socket open');
@@ -24,7 +29,10 @@ export default class SocketClient {
       if (event.data instanceof Blob) {
         msg = event.data;
       } else if (typeof event.data == 'string') {
-        msg = JSON.parse(event.data);
+        const obj = JSON.parse(event.data);
+        msg = new MsgEvent();
+        msg.type = obj.type;
+        msg.data = obj.data;
 
         if (msg.type == 'auth') {
           if (msg.code == 1) {

@@ -8,6 +8,7 @@ export default class RoomController {
   constructor(router: Router, server: GameServer) {
     this.server = server;
     router.post('/room', this.create.bind(this));
+    router.get('/rooms', this.getRooms.bind(this));
     router.put('/room/:room_id/users/:user_id', this.join.bind(this));
     router.delete('/room/:room_id/users/:user_id', this.part.bind(this));
     router.get('/room/:room_id/users', this.getUsers.bind(this));
@@ -27,18 +28,34 @@ export default class RoomController {
     }
   }
 
+  getRooms(_: Request, res: Response) {
+    const apiRooms: any[] = [];
+    this.server.roomManager.rooms.forEach((room) => {
+      apiRooms.push({
+        id: room.id,
+        creatorId: room.creator.id,
+        createAt: room.createAt,
+        players: room.players.map((player) => ({ id: player.id })),
+        gameState: room.game?.state,
+      });
+    });
+    res.status(200).send(apiRooms);
+  }
+
   join(req: Request, res: Response) {
     const userId = +req.params.user_id;
     const roomId = +req.params.room_id;
     const user = (req as AuthRequest).auth.user;
     if (userId != user.id) {
-      return res.status(400).end();
+      return res.status(401).end();
     }
 
     const ret = this.server.roomManager
       .join(user, roomId, this.server.playerManager);
     if (ret == 0) {
       res.status(200).end();
+    } else if (ret == 1) {
+      res.status(404);
     } else {
       res.status(400).send({ code: ret });
     }
@@ -49,7 +66,7 @@ export default class RoomController {
     const roomId = +req.params.room_id;
     const user = (req as AuthRequest).auth.user;
     if (userId != user.id) {
-      return res.status(400).end();
+      return res.status(401).end();
     }
 
     this.server.roomManager.part(user, roomId, this.server.playerManager);
@@ -59,7 +76,7 @@ export default class RoomController {
     const roomId = +req.params.room_id;
     const room = this.server.roomManager.get(roomId);
     if (!room) {
-      return res.status(400).end();
+      return res.status(404).end();
     }
 
     const apiPlayers = room.players.map((player) => ({

@@ -123,7 +123,6 @@ export default class Game {
     // 记录本地当前帧输入
     const inputFrame = InputFrame.fromInputState(this.frameNo, Input.state);
     this.localInputFrameBuffer.push(inputFrame);
-    this.playerTable.get(this.localPlayer.id).inputFrameQueue.push(inputFrame);
 
     this.sceneManager.current.update(delta);
 
@@ -132,6 +131,9 @@ export default class Game {
   }
 
   start(players: Player[]) {
+    if (this.isStarted) {
+      return;
+    }
     initRandomSeed(10);
 
     const colors = [
@@ -141,7 +143,7 @@ export default class Game {
     this.players = players;
     players.forEach((player, i) => {
       const isLocal = this.apiAccess.localUser.id == player.id;
-      const paddle = new Paddle(player.id, colors[i], isLocal, this);
+      const paddle = new Paddle(player.id, colors[i] ?? '#fff', isLocal, this);
       if (isLocal) {
         this.localPlayer = player;
         this.localPaddle = paddle;
@@ -163,8 +165,10 @@ export default class Game {
     this.ball.position.set(this.viewport.width / 2, this.viewport.height / 2);
     this.ball.context2d = this.context2d;
 
-    this.sceneManager.enter('serve', players[0]);
+    this.socketClient.send({ type: 'ready-recv-frame' });
 
+    this.sceneManager.enter('serve', players[0]);
+    this.isStarted = true;
     this.isPause = false;
   }
 
@@ -192,7 +196,9 @@ export default class Game {
     this.context2d.font = '12px monospace';
     this.context2d.fillStyle = '#00ff00';
     this.context2d.fillText('Local FrameNo:   ' + this.frameNo, 16, 20);
+    this.context2d.fillText('Ball Position:   '
+      + this.ball.position.toString(), 16, 36);
     this.context2d.fillText('Paddle Position: '
-    + this.localPaddle.position.toString(), 16, 36);
+      + this.localPaddle.position.toString(), 16, 52);
   }
 }

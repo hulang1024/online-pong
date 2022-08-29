@@ -11,6 +11,7 @@ export default class GameController {
     router.post('/game/start', this.start.bind(this));
     router.post('/game/pause', this.pause.bind(this));
     router.post('/game/resume', this.resume.bind(this));
+    router.post('/game/stop', this.stop.bind(this));
   }
 
   start(req: Request, res: Response) {
@@ -18,21 +19,23 @@ export default class GameController {
     const player = this.server.playerManager.get(user.id);
     if (!player) {
       return res.status(400).send({ code: 1, msg: '未找到玩家' });
-    } else if (player.game && player.game.state != GameState.Ready) {
-      return res.status(400).send({ code: 2, msg: '状态验证失败' });
     } else if (!player.room) {
-      return res.status(400).send({ code: 3, msg: '未加入房间' });
+      return res.status(400).send({ code: 2, msg: '未加入房间' });
+    } else if (player.room.creator.id != player.id) {
+      return res.status(400).send({ code: 3, msg: '只有房主有权限' });
     } else if (player.room.countPlayer() < 2) {
-      return res.status(400).send({ code: 4, msg: '开始游戏需要至少两个玩家' });
+      return res.status(400).send({ code: 4, msg: '已在房间内玩家数不满足条件' });
+    } else if (player.game && player.game.state != GameState.Ready) {
+      return res.status(400).send({ code: 5, msg: '状态验证失败' });
     } else if (player.room.players.some((p) => !p.isOnline())) {
-      return res.status(400).send({ code: 5, msg: '房间内有用户未连接到服务器' });
+      return res.status(400).send({ code: 6, msg: '房间内有用户未连接到服务器' });
     }
 
-    const game = this.server.gameManager.create(player.room);
+    const game = this.server.gameManager.create(player.room, this.server);
     player.room.players.forEach((player) => {
       player.game = game;
     });
-    game.start(this.server);
+    game.start();
     res.status(200).end();
   }
 
@@ -63,6 +66,19 @@ export default class GameController {
     }
 
     player.game.resume();
+    res.status(200).end();
+  }
+
+  stop(req: Request, res: Response) {
+    const user = (req as AuthRequest).auth.user;
+    const player = this.server.playerManager.get(user.id);
+    if (!player) {
+      return res.status(400).send({ code: 1, msg: '未找到玩家' });
+    } else if (!player.game) {
+      return res.status(400).send({ code: 2, msg: '未加入游戏' });
+    }
+
+    player.game.free(this.server);
     res.status(200).end();
   }
 }

@@ -8,8 +8,10 @@ export default class Player {
   id: number;
   user: User = User.Null;
   client: WebSocket | null = null;
+  teamId = 0;
   room: Room = Room.Null;
   game: Game | null = null;
+  isReadyRecvFrame = false;
   // 1个操作帧：32位：高8位记录输入操作，低24位记录帧号
   frames: number[] = [];
   
@@ -31,8 +33,8 @@ export default class Player {
   }
 
   send(data: any) {
-    if (this.client!.readyState == 1) {
-      this.client!.send(data);
+    if (this.client?.readyState == 1) {
+      this.client.send(data);
     }
   }
 }
@@ -48,7 +50,7 @@ export class PlayerManager {
     return this.players.get(id);
   }
 
-  del(id: number) {
+  delete(id: number) {
     this.players.delete(id);
   }
 }

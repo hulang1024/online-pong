@@ -9,13 +9,21 @@ export default class User {
 }
 
 export class UserManager {
-  private idToUser = new Map<number, User>();
+  private users: User[] = [];
+  private userMap = new Map<number, User>();
 
   add(user: User) {
-    this.idToUser.set(user.id, user);
+    if (!this.userMap.has(user.id)) {
+      this.users.push(user);
+      this.userMap.set(user.id, user);
+    }
   }
 
   get(id: number) {
-    return this.idToUser.get(id);
+    return this.userMap.get(id);
+  }
+
+  getUsers() {
+    return this.users;
   }
 }

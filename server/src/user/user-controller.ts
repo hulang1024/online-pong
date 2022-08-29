@@ -9,6 +9,7 @@ export default class UserController {
   constructor(router: Router, server: GameServer) {
     this.server = server;
     router.get('/user', this.get.bind(this));
+    router.get('/users', this.getUsers.bind(this));
     router.post('/user/login', this.login.bind(this));
   }
 
@@ -20,6 +21,15 @@ export default class UserController {
     res.status(200).send({
       id: user.id
     });
+  }
+
+  getUsers(_: Request, res: Response) {
+    const apiUsers = this.server.userManager.getUsers().map((user) => {
+      return {
+        id: user.id
+      };
+    });
+    res.status(200).send(apiUsers);
   }
 
   login(req: Request, res: Response) {
