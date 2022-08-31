@@ -3,8 +3,8 @@ import ButtonStates from "./button-states";
 
 type KeyListener = (key: KeyboardKey) => void;
 
-const pressedListeners = new Set<KeyListener>();
-const releasedListeners = new Set<KeyListener>();
+const pressedListeners: KeyListener[] = [];
+const releasedListeners: KeyListener[] = [];
 const keyStates = new ButtonStates<KeyboardKey>();
 
 document.addEventListener('keydown', (e) => {
@@ -36,10 +36,10 @@ const KeyboardInput = {
   isPressed: keyStates.isPressed.bind(keyStates),
   addKeyListener(pressedL: KeyListener, releasedL: KeyListener) {
     if (pressedL) {
-      pressedListeners.add(pressedL);
+      pressedListeners.push(pressedL);
     }
     if (releasedL) {
-      releasedListeners.add(releasedL);
+      releasedListeners.push(releasedL);
     }
   }
 };

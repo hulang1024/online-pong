@@ -8,11 +8,11 @@ export default class FrameInput {
    */
   static decode(val: number) {
     const pressedButtons = [];
-    if (val & (1 << 0)) pressedButtons.push(GameButton.Up);
-    if (val & (1 << 1)) pressedButtons.push(GameButton.Right);
-    if (val & (1 << 2)) pressedButtons.push(GameButton.Down);
-    if (val & (1 << 3)) pressedButtons.push(GameButton.Left);
-    if (val & (1 << 4)) pressedButtons.push(GameButton.Serve);
+    if (val & 1) pressedButtons.push(GameButton.Up);
+    if (val & 2) pressedButtons.push(GameButton.Right);
+    if (val & 4) pressedButtons.push(GameButton.Down);
+    if (val & 8) pressedButtons.push(GameButton.Left);
+    if (val & 16) pressedButtons.push(GameButton.Serve);
     return new ButtonStates<GameButton>(pressedButtons);
   }
   
@@ -21,7 +21,6 @@ export default class FrameInput {
    */
   static encode(buttonStates: ButtonStates<GameButton>) {
     let v = 0;
-    // 依次表示上 右 下 左 空格的按下与否
     if (buttonStates.isPressed(GameButton.Up))    v |= 1;
     if (buttonStates.isPressed(GameButton.Right)) v |= 2;
     if (buttonStates.isPressed(GameButton.Down))  v |= 4;

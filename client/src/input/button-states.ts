@@ -2,7 +2,7 @@
  * 表示一组按钮按下的状态
  */
 export default class ButtonStates<TButton> {
-  private pressedButtons: TButton[];
+  protected pressedButtons: TButton[];
 
   static readonly EMPTY = Object.freeze(new ButtonStates());
 

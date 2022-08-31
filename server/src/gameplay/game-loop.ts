@@ -46,7 +46,6 @@ export default class GameLoop implements FixedUpdatable {
     let offset = 3;
     players.forEach((player) => {
       dv.setUint8(offset++, player.inputQueue.length);
-      // 读倒数第n个，注意：此种方式未判断帧号，依赖于前端在锁定第n个帧时不推送输入
       for (let i = 0; i < player.inputQueue.length; i++) {
         dv.setUint8(offset++, player.inputQueue[i]);
       }

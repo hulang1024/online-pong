@@ -32,8 +32,8 @@ export default class Ball {
       if (checkCircleAndRectCollision(this, paddle)) {
         this.position.y -= this.vel.y * delta;
         this.position.x -= this.vel.x * delta;
-        this.vel.x = -this.vel.x * randomRange(1, 2);
-        this.vel.y = -this.vel.y * randomRange(1, 2);
+        this.vel.x = -this.vel.x;// * randomRange(1, 2);
+        this.vel.y = -this.vel.y;// * randomRange(1, 2);
         break;
       }
     }
@@ -47,17 +47,17 @@ export default class Ball {
 
     if (this.position.x - this.radius < 0) {
       this.position.x = this.radius;
-      this.vel.x = -this.vel.x * randomRange(1, 1.1);
+      this.vel.x = -this.vel.x;// * randomRange(1, 1.1);
     } else if (this.position.x > this.game.viewport.width - this.radius) {
       this.position.x = this.game.viewport.width - this.radius;
-      this.vel.x = -this.vel.x * randomRange(1, 1.1);
+      this.vel.x = -this.vel.x;// * randomRange(1, 1.1);
     }
     if (this.position.y - this.radius < 0) {
       this.position.y = this.radius;
-      this.vel.y = -this.vel.y * randomRange(1, 1.1);
+      this.vel.y = -this.vel.y;// * randomRange(1, 1.1);
     } else if (this.position.y > this.viewport.height - this.radius) {
       this.position.y = this.viewport.height - this.radius;
-      this.vel.y = -this.vel.y * randomRange(1, 1.1);
+      this.vel.y = -this.vel.y;// * randomRange(1, 1.1);
     }
   }
 

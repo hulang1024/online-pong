@@ -13,12 +13,13 @@ import { SceneManager } from './scenes/scene';
 import { ServeScene } from './scenes/serve-scene';
 import { PlayScene } from './scenes/play-scene';
 import ButtonStates from '../input/button-states';
+import GameLoop from '../game-loop';
 
 export default class Game {
   apiAccess: APIAccess;
   socketClient: SocketClient;
   
-  players: Player[];
+  players: Player[] = [];
   playerTable = new Map<number, Player>();
   localPlayer: Player;
 
@@ -28,19 +29,24 @@ export default class Game {
   frameNo = -1;
   // 记录服务端发送的更新消息
   serverUpdateQueue: ServerUpdateFrame[] = [];
+  lastSendFrameInput = 0;
 
   isStarted = false;
   isPause = true;
   // 等待服务器更新
   isWait = true;
+  updateCheckTimer = 0;
 
+  gameLoop: GameLoop;
   viewport: Viewport;
   canvas: HTMLCanvasElement;
   context2d: CanvasRenderingContext2D;
 
   sceneManager: SceneManager;
 
-  constructor(apiAccess: APIAccess, socketClient: SocketClient) {
+  constructor(gameLoop: GameLoop,
+    apiAccess: APIAccess, socketClient: SocketClient) {
+    this.gameLoop = gameLoop;
     this.apiAccess = apiAccess;
     this.socketClient = socketClient;
 
@@ -62,55 +68,69 @@ export default class Game {
     this.context2d.font = '14px sans-serif';
     document.body.appendChild(canvas);
 
+    GameInput.onButton((_, pressed) => {
+      if (pressed && !this.isPause && !this.isWait) {
+        this.socketClient.sendBinary(FrameInput.encode(GameInput));
+      }
+    });
     this.initSocket();
   }
 
   fixedUpdate(delta: number) {
-    if (this.isPause) {
-      return;
-    } else if (this.isWait) {
-      console.log('wait', this.frameNo);
-      return;
+    this.updateCheckTimer += delta;
+    if (this.updateCheckTimer >= 3 / 60) {
+      this.updateCheckTimer = 0;
+
+      if (this.serverUpdateQueue.length == 0) {
+        this.isWait = true;
+      }
     }
 
-    //console.log(frameNo, keyFrameNo, this.lastServerUpdate.frameNo);
-    // 关键帧时是否已经有更新数据？
     if (this.serverUpdateQueue.length) {
-      //console.log('next key frame', keyFrameNo);
       const serverUpdate = this.serverUpdateQueue.shift();
       this.frameNo = serverUpdate.frameNo;
-      // 更新输入
       serverUpdate.playerFrameInputQueue.forEach((inputQueue, playerId) => {
         const player = this.playerTable.get(playerId);
         player.frameInputQueue = inputQueue;
       });
-    } else {
-      // 等待更新
-      this.isWait = true;
+      let inputQueueEmptyCnt = 0;
+      while (inputQueueEmptyCnt < this.players.length) {
+        this.players.forEach((player) => {    
+          const inputState = player.frameInputQueue.shift()
+            || ButtonStates.EMPTY as ButtonStates<GameButton>;
+          player.lastButtonStates = inputState;
+          player.paddle.fixedUpdate(delta, inputState);
+          this.ball.fixedUpdate(delta);
+          this.sceneManager.current.update(delta);
+          if (inputState == ButtonStates.EMPTY) {
+            inputQueueEmptyCnt++;
+          }
+        });
+      }
+      this.isWait = false;
+    }
+    
+    if (this.isWait) {
+      console.log('wait', this.frameNo);
       return;
     }
 
-    this.context2d.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    // 暂停只是停止输入，让当前帧所有输入执行完成
+    if (!this.isPause &&
+        (GameInput.hasAnyButtonPressed() || GameInput.hasChanged())) {
+      // 每帧都发送输入状态
+      // 这种方式比监听事件更及时（第二次keydown触发存在延迟），这里延迟最大是帧间隔
+      this.socketClient.sendBinary(FrameInput.encode(GameInput));
+    }
+  }
 
+  draw() {
+    this.context2d.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.players.forEach((player) => {
       player.paddle.draw();
-
-      const inputState = player.frameInputQueue.shift()
-        || ButtonStates.EMPTY as ButtonStates<GameButton>;
-      player.lastButtonStates = inputState;
-      player.paddle.fixedUpdate(delta, inputState);
     });
-
     this.ball.draw();
-    this.ball.fixedUpdate(delta);
-
-    this.sceneManager.current.update(delta);
-
     this.drawDebugInfo();
-  
-    if (GameInput.hasAnyButtonPressed()) {
-      this.socketClient.sendBinary(FrameInput.encode(GameInput.state))
-    }
   }
 
   start(players: Player[]) {
@@ -156,17 +176,15 @@ export default class Game {
 
     this.isStarted = true;
     this.isPause = false;
+    
+    this.gameLoop.add(this);
   }
 
-  initSocket() {
+  private initSocket() {
     this.socketClient.onMessage((msg) => {
       if (msg instanceof Blob) {
         ServerUpdateFrame.decode(msg, this.players, (update) => {
           this.serverUpdateQueue.push(update);
-          //console.log('lastServerUpdate.frameNo', this.lastServerUpdate.frameNo);
-          //console.log('receive', JSON.stringify(frame));
-          // 置为不等待
-          this.isWait = false;
         });
       }
     });
@@ -175,10 +193,12 @@ export default class Game {
   private drawDebugInfo() {
     this.context2d.font = '12px monospace';
     this.context2d.fillStyle = '#00ff00';
-    this.context2d.fillText('Local FrameNo:   ' + this.frameNo, 16, 20);
-    this.context2d.fillText('Ball Position:   '
+    this.context2d.fillText('Local FrameNo: ' + this.frameNo, 16, 20);
+    this.context2d.fillText('Ball Position: '
       + this.ball.position.toString(), 16, 36);
-    this.context2d.fillText('Paddle Position: '
-      + this.localPlayer.paddle.position.toString(), 16, 52);
+    this.players.forEach((player, i ) => {
+      this.context2d.fillText('Paddle#' + (i + 1) + ' Position: '
+        + player.paddle.position.toString(), 16, 52 + i * 16);
+    });
   }
 }

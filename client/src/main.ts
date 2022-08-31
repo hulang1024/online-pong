@@ -1,7 +1,7 @@
 import APIAccess from './api/api';
 import Game from './gameplay/game';
 import Player from './gameplay/player';
-import MainLoop from './main-loop';
+import GameLoop from './game-loop';
 import { User } from './user';
 import { parseSearchParams } from './utils';
 import SocketClient, { MsgEvent } from './ws';
@@ -24,7 +24,9 @@ window.addEventListener('load', () => {
 
       const socketClient = new SocketClient(apiAccess);
 
-      const game = new Game(apiAccess, socketClient);
+      const gameLoop = new GameLoop();
+      gameLoop.start();
+      const game = new Game(gameLoop, apiAccess, socketClient);
 
       socketClient.onMessage((msg) => {
         if (!(msg instanceof MsgEvent)) {
@@ -50,10 +52,6 @@ window.addEventListener('load', () => {
           }
         }
       });
-
-      const mainLoop = new MainLoop();
-      mainLoop.objects.push(game);
-      mainLoop.start();
     })
     .catch((e) => {
       console.error(e);

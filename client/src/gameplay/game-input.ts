@@ -1,58 +1,97 @@
 import ButtonStates from "../input/button-states";
-import KeyboardInput from "../input/keyboard-input";
-import KeyboardKey from "../input/keyboard-key";
+import KeyboardKey, { fromKeyboardEvent } from "../input/keyboard-key";
 
 // 游戏按钮（逻辑按钮）
 export enum GameButton {
   // 移动方向
-  Up = 1, Right = 2, Down = 3, Left = 4,
+  Up = 1,
+  Right,
+  Down,
+  Left,
   // 发球
   Serve
 };
 
-const state = new ButtonStates<GameButton>();
+function fromKeyboardKey(key: KeyboardKey) {
+  switch (key) {
+    case KeyboardKey.Up:
+    case KeyboardKey.W:
+      return GameButton.Up;
+    case KeyboardKey.Right:
+    case KeyboardKey.D:
+      return GameButton.Right;
+    case KeyboardKey.Down:
+    case KeyboardKey.S:
+      return GameButton.Down;
+    case KeyboardKey.Left:
+    case KeyboardKey.A:
+      return GameButton.Left;
+    case KeyboardKey.Space:
+      return GameButton.Serve;
+  }
+  return null;
+}
 
-// 游戏全局输入
-export default class GameInput {
-  static readonly state = state;
-  static {
-    KeyboardInput.addKeyListener(
-      (key) => {
-        const btn = keyToButton(key);
-        btn && state.setPressed(btn, true);
-      },
-      (key) => {
-        const btn = keyToButton(key);
-        btn && state.setPressed(btn, false);
+type ButtonListener = (btn: GameButton, down: boolean) => void;
+
+// 游戏全局输入状态
+class GameInputStates extends ButtonStates<GameButton> {
+  private buttonListeners: ButtonListener[] = [];
+
+  private lastPressedButtons: GameButton[] = [];
+
+  constructor() {
+    super();
+
+    document.addEventListener('keydown', (e) => {
+      const btn = fromKeyboardKey(fromKeyboardEvent(e));
+      if (btn && this.setPressed(btn, true)) {
+        this.buttonListeners.forEach((cb) => {
+          cb(btn, true);
+        });
       }
-    );
+    });
     
-    function keyToButton(key: KeyboardKey) {
-      switch (key) {
-        case KeyboardKey.Up:
-        case KeyboardKey.W:
-          return GameButton.Up;
-        case KeyboardKey.Right:
-        case KeyboardKey.D:
-          return GameButton.Right;
-        case KeyboardKey.Down:
-        case KeyboardKey.S:
-          return GameButton.Down;
-        case KeyboardKey.Left:
-        case KeyboardKey.A:
-          return GameButton.Left;
-        case KeyboardKey.Space:
-          return GameButton.Serve;
+    document.addEventListener('keyup', (e) => {
+      const btn = fromKeyboardKey(fromKeyboardEvent(e));
+      if (btn && this.setPressed(btn, false)) {
+        this.buttonListeners.forEach((cb) => {
+          cb(btn, true);
+        });
       }
-      return null;
+    });
+  }
+  
+  hasChanged() {
+    let changed: boolean | null = null;
+    if (this.lastPressedButtons.length == this.pressedButtons.length) {
+      for (let i = 0; i < this.pressedButtons.length; i++) {
+        if (this.lastPressedButtons[i] != this.pressedButtons[i]) {
+          changed = true;
+          break;
+        }
+      }
+      if (changed !== null) {
+        changed = false;
+      }
+    } else {
+      changed = true;
     }
+
+    if (changed) {
+      this.lastPressedButtons = [];
+      for (let i = 0; i < this.pressedButtons.length; i++) {
+        this.lastPressedButtons.push(this.pressedButtons[i]);
+      }
+    }
+
+    return changed;
   }
 
-  static hasAnyButtonPressed() {
-    return state.hasAnyButtonPressed();
-  }
-
-  static isPressed(button: GameButton) {
-    state.isPressed(button);
+  onButton(cb: ButtonListener) {
+    this.buttonListeners.push(cb);
   }
 }
+
+const GameInput = new GameInputStates();
+export default GameInput;
