@@ -5,6 +5,9 @@ export default class FrameInput {
   readonly frameNo: number;
   readonly buttonStates: ButtonStates<GameButton>;
 
+  static readonly EMPTY = new FrameInput(
+    -1, ButtonStates.EMPTY as ButtonStates<GameButton>);
+
   constructor(frameNo: number, buttonStates: ButtonStates<GameButton>) {
     this.frameNo = frameNo;
     this.buttonStates = buttonStates;

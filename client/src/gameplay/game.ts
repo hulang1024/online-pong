@@ -12,7 +12,6 @@ import { createCanvas } from '../canvas';
 import { SceneManager } from './scenes/scene';
 import { ServeScene } from './scenes/serve-scene';
 import { PlayScene } from './scenes/play-scene';
-import ButtonStates from '../input/button-states';
 import GameLoop from '../game-loop';
 
 export default class Game {
@@ -34,9 +33,19 @@ export default class Game {
   isStarted = false;
   isPause = true;
   // 等待服务器更新
-  isWait = true;
+  isWaitForServerUpdate = true;
+
+  private _serverUpdateFPS = 0;
+  set serverUpdateFPS(fps: number) {
+    this._serverUpdateFPS = fps;
+    this.msPerServerUpdate = 60 / fps / 60 * 1000;
+  }
+  get serverUpdateFPS() {
+    return this._serverUpdateFPS;
+  }
+
   // 服务器每帧间隔的时长
-  msPerServerUpdate = 3 / 60;
+  msPerServerUpdate = 0;
   // 计时器
   serverUpdateTimer = 0;
 
@@ -72,7 +81,7 @@ export default class Game {
     document.body.appendChild(canvas);
 
     GameInput.onButton((_, pressed) => {
-      if (pressed && !this.isPause && !this.isWait) {
+      if (pressed && !this.isPause) {
         this.socketClient.sendBinary(FrameInput.encode(this.frameNo, GameInput));
       }
     });
@@ -80,35 +89,37 @@ export default class Game {
   }
 
   fixedUpdate(delta: number) {
-    this.serverUpdateTimer += delta;
-    if (this.serverUpdateTimer >= this.msPerServerUpdate) {
-      this.serverUpdateTimer -= this.msPerServerUpdate;
-
-      if (this.serverUpdateQueue.length == 0) {
-        this.isWait = true;
-      }
-    }
-
-    if (this.serverUpdateQueue.length) {
+    while (this.serverUpdateQueue.length) {
       const serverUpdate = this.serverUpdateQueue.shift();
       this.frameNo = serverUpdate.frameNo;
-      // 要消耗完，再覆盖服务器更新
+      // 要消耗完，再覆盖服务器更新≈
+      const maxFrameCount = Math.floor(60 / this._serverUpdateFPS);
       serverUpdate.playerFrameInputQueue.forEach((inputQueue, playerId) => {
-        const player = this.playerTable.get(playerId);
-        player.frameInputQueue = inputQueue;
+        let cnt = maxFrameCount - inputQueue.length;
+        for (let i = 0; i < cnt; i++) {
+          inputQueue.push(FrameInput.EMPTY);
+        }
+        const playerInputQueue = this.playerTable.get(playerId).frameInputQueue;
+        playerInputQueue.push.apply(playerInputQueue, inputQueue);
       });
-      
-      this.consumeAllInputUpdate(delta);
 
-      this.isWait = false;
-    }
-    
-    if (this.isWait) {
-      console.log('wait', this.frameNo);
-      return;
+      this.isWaitForServerUpdate = false;
     }
 
-    // 暂停只是停止输入，让当前帧所有输入执行完成
+    if (!this.isWaitForServerUpdate) {
+      this.players.forEach((player) => {    
+        const frameInput = player.frameInputQueue.shift();
+        if (frameInput) {
+          player.lastButtonStates = frameInput.buttonStates;
+          player.paddle.fixedUpdate(delta, frameInput.buttonStates);
+          this.ball.fixedUpdate(delta);
+          this.sceneManager.current.update(delta);
+        } else {
+          this.isWaitForServerUpdate = true;
+        }
+      });
+    }
+
     if (!this.isPause &&
         // 如果有按钮按下状态总是发送
         // 或者有变化，例如最后一次松开（但之后依然是松开状态即没有变化）也发送
@@ -116,31 +127,6 @@ export default class Game {
       // 每帧都发送输入状态
       // 这种方式比监听事件更及时（第二次keydown触发存在延迟），这里延迟最大是帧间隔
       this.socketClient.sendBinary(FrameInput.encode(this.frameNo, GameInput));
-    }
-  }
-
-  private inputUpdate(delta: number) {
-    this.players.forEach((player) => {    
-      const frameInput = player.frameInputQueue.shift();
-      const buttonStates = frameInput
-        ? frameInput.buttonStates
-        : ButtonStates.EMPTY as ButtonStates<GameButton>;
-      player.lastButtonStates = buttonStates;
-      player.paddle.fixedUpdate(delta, buttonStates);
-      this.ball.fixedUpdate(delta);
-      this.sceneManager.current.update(delta);
-    });
-  }
-
-  private consumeAllInputUpdate(delta: number) {
-    let inputQueueEmptyCnt = 0;
-    while (inputQueueEmptyCnt < this.players.length) {
-      this.inputUpdate(delta);
-      this.players.forEach((player) => {    
-        if (player.frameInputQueue.length == 0) {
-          inputQueueEmptyCnt++;
-        }
-      });
     }
   }
 
@@ -196,7 +182,6 @@ export default class Game {
 
     this.isStarted = true;
     this.isPause = false;
-    
     this.gameLoop.add(this);
   }
 
@@ -213,6 +198,7 @@ export default class Game {
       if (msg instanceof Blob) {
         ServerUpdateFrame.decode(msg, this.players, (update) => {
           this.serverUpdateQueue.push(update);
+          //this.serverUpdateQueue.sort((a, b) => a.frameNo - b.frameNo);
         });
       }
     });

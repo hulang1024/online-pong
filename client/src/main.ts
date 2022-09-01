@@ -35,6 +35,7 @@ window.addEventListener('load', () => {
         if (msg.type == 'start') {
           // start会发多次
           if (!game.isStarted) {
+            game.serverUpdateFPS = msg.data.fps;
             apiAccess.http.get(`/room/${roomId}/users`).then((ret) => {
               game.start(ret.data.map((p: any) => new Player(p.id)));
             });

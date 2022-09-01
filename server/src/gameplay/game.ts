@@ -17,7 +17,10 @@ export default class Game {
 
   start() {
     if (this.room.players.some((player) => !player.isReadyRecvFrame)) {
-      this.room.broadcastMsg({ type: 'start' });
+      this.room.broadcastMsg({
+        type: 'start',
+        data: { fps: this.gameLoop.fps }
+      });
       return;
     }
     this.room.players.forEach((player) => {

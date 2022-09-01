@@ -9,7 +9,7 @@ export default class Paddle {
   width = 90;
   height = 15;
   dx = 0;
-  private speed = 6 * 62;
+  private speed = 8 * 62;
   readonly game: Game;
   readonly viewport: Viewport;
   context2d: CanvasRenderingContext2D;

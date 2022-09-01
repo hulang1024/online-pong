@@ -54,3 +54,6 @@ export class PlayerManager {
     this.players.delete(id);
   }
 }
+
+// 表示空输入，在第n个更新帧时未收到客户端数据则会指定此值
+export const EMPTY_INPUTS = [];

@@ -1,5 +1,5 @@
-import RenderLoop from "./render-loop";
-import UpdateLoop from "./update-loop";
+// 每帧固定更新时长
+export const S_PER_UPDATE = 1 / 60;
 
 export type FixedUpdate = (delta: number) => void;
 export type Draw = (delta: number) => void;
@@ -15,9 +15,9 @@ interface FixedUpdatable {
 }
 
 export default class GameLoop {
-  private updateLoop = new UpdateLoop();
-  private renderLoop = new RenderLoop();
   private isStarted = false;
+  private fixedUpdates: FixedUpdate[] = [];
+  private draws: Draw[] = [];
 
   start() {
     if (this.isStarted) {
@@ -25,13 +25,56 @@ export default class GameLoop {
     }
     this.isStarted = true;
 
-    this.updateLoop.start();
-    this.renderLoop.start();
+    const { fixedUpdates, draws } = this;
+
+    let lastTime = 0;
+    let elapsed = 0;
+    let lag = 0; // 游戏时间相对于实际时间的延迟
+
+    const loop = (nowTime: number) => {
+      elapsed = (nowTime - lastTime) * 0.001;
+      lastTime = nowTime;
+      lag += elapsed;
+
+      // 缓存长度，避免循环过程中改变，因为本帧中就可能会产生新对象，
+      // 但不希望新对象在本帧中就有机会活动
+      let cnt = fixedUpdates.length;
+      while (lag >= S_PER_UPDATE) {
+        for (let i = 0; i < cnt; i++) {
+          fixedUpdates[i](S_PER_UPDATE);
+        }
+        lag = Math.max(0, lag - S_PER_UPDATE);
+      }
+
+      cnt = draws.length;
+      for (let i = 0; i < cnt; i++) {
+        draws[i](lag);
+      }
+
+      requestAnimationFrame(loop); 
+    };
+
+    requestAnimationFrame((nowTime: number) => {
+      lastTime = nowTime;
+      requestAnimationFrame(loop);
+    });
   }
 
   add(o: FixedUpdatable & Drawable) {
-    this.updateLoop.addFixedUpdate(o.fixedUpdate.bind(o));
-    this.renderLoop.addDraw(o.draw.bind(o));
+    this.addFixedUpdate(o.fixedUpdate.bind(o));
+    this.addDraw(o.draw.bind(o));
+  }
+
+  addDraw(f: Draw) {
+    if (!this.draws.includes(f)) {
+      this.draws.push(f);
+    }
+  }
+
+  addFixedUpdate(f: FixedUpdate) {
+    if (!this.fixedUpdates.includes(f)) {
+      this.fixedUpdates.push(f);
+    }
   }
 }
 
