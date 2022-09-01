@@ -12,8 +12,8 @@ export default class Player {
   room: Room = Room.Null;
   game: Game | null = null;
   isReadyRecvFrame = false;
-  // 1帧输入编码为8位
-  inputQueue: number[] = [];
+  //每个输入：<帧号(3B)><输入信息(1B)>
+  frameInputQueue: number[][] = [];
   
   constructor(user: User) {
     this.id = user.id;

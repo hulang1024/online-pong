@@ -1,11 +1,9 @@
 import FrameInput from "./frame-input";
-import ButtonStates from "../input/button-states";
-import { GameButton } from "./game-input";
 import Player from "./player";
 
 export default class ServerUpdateFrame {
   readonly frameNo: number;
-  playerFrameInputQueue = new Map<number, ButtonStates<GameButton>[]>();
+  playerFrameInputQueue = new Map<number, FrameInput[]>();
 
   constructor(frameNo: number) {
     this.frameNo = frameNo;
@@ -19,12 +17,6 @@ export default class ServerUpdateFrame {
         return;
       }
   
-      // 更新帧的字节布局：
-      // <当前帧号(3B)>
-      // <玩家1输入帧数量><玩家1输入帧对象组>...
-      // <玩家n输入帧数量(1B)><玩家n输入对象帧组(输入帧数量 * 4B)>
-      // 注：输入帧对象：<输入信息(1B)>
-  
       const dv = new DataView(ev.target.result as ArrayBuffer);
       // 读更新帧的当前帧号（3字节）
       const serverUpdateFrame = new ServerUpdateFrame(
@@ -35,10 +27,11 @@ export default class ServerUpdateFrame {
       players.forEach((player) => {
         // 读输入帧的数量
         const frameCount =  dv.getUint8(offset++);
-        const inputs: ButtonStates<GameButton>[] = [];
+        const inputs: FrameInput[] = [];
         for (let f = 0; f < frameCount; f++) {
           // 读输入帧
-          inputs.push(FrameInput.decode(dv.getUint8(offset++)));
+          inputs.push(FrameInput.decode(dv.getUint32(offset, true)));
+          offset += 4;
         }
         serverUpdateFrame.playerFrameInputQueue.set(player.id, inputs);
       });

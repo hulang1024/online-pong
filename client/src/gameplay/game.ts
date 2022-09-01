@@ -26,7 +26,7 @@ export default class Game {
   ball: Ball;
 
   // 当前（逻辑更新）帧号
-  frameNo = -1;
+  frameNo = 0;
   // 记录服务端发送的更新消息
   serverUpdateQueue: ServerUpdateFrame[] = [];
   lastSendFrameInput = 0;
@@ -35,7 +35,10 @@ export default class Game {
   isPause = true;
   // 等待服务器更新
   isWait = true;
-  updateCheckTimer = 0;
+  // 服务器每帧间隔的时长
+  msPerServerUpdate = 3 / 60;
+  // 计时器
+  serverUpdateTimer = 0;
 
   gameLoop: GameLoop;
   viewport: Viewport;
@@ -70,16 +73,16 @@ export default class Game {
 
     GameInput.onButton((_, pressed) => {
       if (pressed && !this.isPause && !this.isWait) {
-        this.socketClient.sendBinary(FrameInput.encode(GameInput));
+        this.socketClient.sendBinary(FrameInput.encode(this.frameNo, GameInput));
       }
     });
     this.initSocket();
   }
 
   fixedUpdate(delta: number) {
-    this.updateCheckTimer += delta;
-    if (this.updateCheckTimer >= 3 / 60) {
-      this.updateCheckTimer = 0;
+    this.serverUpdateTimer += delta;
+    if (this.serverUpdateTimer >= this.msPerServerUpdate) {
+      this.serverUpdateTimer -= this.msPerServerUpdate;
 
       if (this.serverUpdateQueue.length == 0) {
         this.isWait = true;
@@ -89,24 +92,14 @@ export default class Game {
     if (this.serverUpdateQueue.length) {
       const serverUpdate = this.serverUpdateQueue.shift();
       this.frameNo = serverUpdate.frameNo;
+      // 要消耗完，再覆盖服务器更新
       serverUpdate.playerFrameInputQueue.forEach((inputQueue, playerId) => {
         const player = this.playerTable.get(playerId);
         player.frameInputQueue = inputQueue;
       });
-      let inputQueueEmptyCnt = 0;
-      while (inputQueueEmptyCnt < this.players.length) {
-        this.players.forEach((player) => {    
-          const inputState = player.frameInputQueue.shift()
-            || ButtonStates.EMPTY as ButtonStates<GameButton>;
-          player.lastButtonStates = inputState;
-          player.paddle.fixedUpdate(delta, inputState);
-          this.ball.fixedUpdate(delta);
-          this.sceneManager.current.update(delta);
-          if (inputState == ButtonStates.EMPTY) {
-            inputQueueEmptyCnt++;
-          }
-        });
-      }
+      
+      this.consumeAllInputUpdate(delta);
+
       this.isWait = false;
     }
     
@@ -117,10 +110,37 @@ export default class Game {
 
     // 暂停只是停止输入，让当前帧所有输入执行完成
     if (!this.isPause &&
+        // 如果有按钮按下状态总是发送
+        // 或者有变化，例如最后一次松开（但之后依然是松开状态即没有变化）也发送
         (GameInput.hasAnyButtonPressed() || GameInput.hasChanged())) {
       // 每帧都发送输入状态
       // 这种方式比监听事件更及时（第二次keydown触发存在延迟），这里延迟最大是帧间隔
-      this.socketClient.sendBinary(FrameInput.encode(GameInput));
+      this.socketClient.sendBinary(FrameInput.encode(this.frameNo, GameInput));
+    }
+  }
+
+  private inputUpdate(delta: number) {
+    this.players.forEach((player) => {    
+      const frameInput = player.frameInputQueue.shift();
+      const buttonStates = frameInput
+        ? frameInput.buttonStates
+        : ButtonStates.EMPTY as ButtonStates<GameButton>;
+      player.lastButtonStates = buttonStates;
+      player.paddle.fixedUpdate(delta, buttonStates);
+      this.ball.fixedUpdate(delta);
+      this.sceneManager.current.update(delta);
+    });
+  }
+
+  private consumeAllInputUpdate(delta: number) {
+    let inputQueueEmptyCnt = 0;
+    while (inputQueueEmptyCnt < this.players.length) {
+      this.inputUpdate(delta);
+      this.players.forEach((player) => {    
+        if (player.frameInputQueue.length == 0) {
+          inputQueueEmptyCnt++;
+        }
+      });
     }
   }
 
@@ -180,6 +200,14 @@ export default class Game {
     this.gameLoop.add(this);
   }
 
+  pause() {
+    this.isPause = true;
+  }
+  
+  resume() {
+    this.isPause = false;
+  }
+
   private initSocket() {
     this.socketClient.onMessage((msg) => {
       if (msg instanceof Blob) {
@@ -191,14 +219,14 @@ export default class Game {
   }
 
   private drawDebugInfo() {
-    this.context2d.font = '12px monospace';
+    this.context2d.font = '14px monospace';
     this.context2d.fillStyle = '#00ff00';
     this.context2d.fillText('Local FrameNo: ' + this.frameNo, 16, 20);
     this.context2d.fillText('Ball Position: '
-      + this.ball.position.toString(), 16, 36);
+      + this.ball.position.toString(), 16, 40);
     this.players.forEach((player, i ) => {
       this.context2d.fillText('Paddle#' + (i + 1) + ' Position: '
-        + player.paddle.position.toString(), 16, 52 + i * 16);
+        + player.paddle.position.toString(), 16, 60 + i * 20);
     });
   }
 }

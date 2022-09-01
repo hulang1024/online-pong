@@ -12,7 +12,7 @@ export default class Game {
     this.room = room;
     this.server = server;
     room.game = this;
-    this.gameLoop = new GameLoop(this);
+    this.gameLoop = new GameLoop(this, this.server.mainLoop);
   }
 
   start() {
@@ -21,7 +21,7 @@ export default class Game {
       return;
     }
     this.room.players.forEach((player) => {
-      player.inputQueue = [];
+      player.frameInputQueue = [];
     });
     this.server.mainLoop.add(this.gameLoop);
     this.gameLoop.isPause = false;

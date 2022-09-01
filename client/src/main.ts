@@ -41,10 +41,12 @@ window.addEventListener('load', () => {
           }
         } else if (msg.type == 'pause') {
           console.log('游戏暂停');
+          game.pause();
         } else if (msg.type == 'stop') {
           console.log('游戏停止');
         } else if (msg.type == 'resume') {
-          console.log('游戏停止');
+          console.log('游戏恢复');
+          game.resume();
         } else if (msg.type.startsWith('room')) {
           if (msg.type == 'room.user.offline') {
             const user = msg.data as User;
