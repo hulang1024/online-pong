@@ -1,15 +1,28 @@
 import APIAccess from "./api/api";
 
-export class MsgEvent {
+export class ServerMsg {
   type: string;
   data: any;
 }
 
-type MessageListener = (msg: MsgEvent | Blob) => void;
+type MessageListener = (msg: ServerMsg | Blob) => void;
 
 export default class SocketClient {
-  ws: WebSocket;
-  messageListeners: MessageListener[] = [];
+  private ws: WebSocket;
+  private messageListeners: MessageListener[] = [];
+  // 模拟网络抖动
+  private throttlingMsgQueue: ServerMsg[] = [];
+  private _enableThrottling = false;
+
+  set enableThrottling(enable: boolean) {
+    if (this._enableThrottling && !enable) {
+      // 如果从启用到禁用，清空之前的等待队列
+      while (this.throttlingMsgQueue.length) {
+        this.triggerMessageListeners( this.throttlingMsgQueue.shift() );
+      }
+    }
+    this._enableThrottling = enable;
+  }
 
   constructor(apiAccess: APIAccess) {
     const ws = new WebSocket('ws://' + location.hostname
@@ -31,7 +44,7 @@ export default class SocketClient {
         msg = event.data;
       } else if (typeof event.data == 'string') {
         const obj = JSON.parse(event.data);
-        msg = new MsgEvent();
+        msg = new ServerMsg();
         msg.type = obj.type;
         msg.data = obj.data;
 
@@ -44,12 +57,24 @@ export default class SocketClient {
           }
         }
       }
-      this.messageListeners.forEach((l) => l(msg));
+      
+      if (this._enableThrottling) {
+        this.throttlingMsgQueue.push(msg);
+        setTimeout(() => {
+          this.triggerMessageListeners( this.throttlingMsgQueue.shift() );
+        }, Math.random() * 1000);
+      } else {
+        this.triggerMessageListeners(msg);
+      }
     };
   }
 
   onMessage(l: MessageListener) {
     this.messageListeners.push(l);
+  }
+
+  triggerMessageListeners(msg: ServerMsg) {
+    this.messageListeners.forEach((l) => l(msg));
   }
 
   sendBinary(data: ArrayBuffer) {

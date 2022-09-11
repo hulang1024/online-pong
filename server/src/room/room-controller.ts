@@ -17,7 +17,7 @@ export default class RoomController {
   create(req: Request, res: Response) {
     const user = (req as AuthRequest).auth.user;
     const room = this.server.roomManager.create();
-    room.createAt = new Date().getTime();
+    room.createAt = Date.now();
     room.creator = user;
     const ret = this.server.roomManager
       .join(user, room.id, this.server.playerManager);

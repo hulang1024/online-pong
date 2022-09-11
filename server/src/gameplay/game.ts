@@ -24,7 +24,7 @@ export default class Game {
       return;
     }
     this.room.players.forEach((player) => {
-      player.frameInputQueue = [];
+      player.lastSn = 0;
     });
     this.server.mainLoop.add(this.gameLoop);
     this.gameLoop.isPause = false;

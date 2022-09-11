@@ -1,16 +1,6 @@
-import ButtonStates from "../input/button-states";
 import KeyboardKey, { fromKeyboardEvent } from "../input/keyboard-key";
-
-// 游戏按钮（逻辑按钮）
-export enum GameButton {
-  // 移动方向
-  Up = 1,
-  Right,
-  Down,
-  Left,
-  // 发球
-  Serve
-};
+import ButtonStates from "../shared/game/input/buttonStates";
+import GameButton from "../shared/game/input/gameButton";
 
 function fromKeyboardKey(key: KeyboardKey) {
   switch (key) {

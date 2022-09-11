@@ -1,16 +1,19 @@
-import FrameInput from "./frame-input";
+import { GameStateSystemInput } from "../shared/game/input";
+import PlayerInput from "../shared/game/input/playerInput";
 import Player from "./player";
 
 export default class ServerUpdateFrame {
-  readonly frameNo: number;
-  playerFrameInputQueue = new Map<number, FrameInput[]>();
+  frameNo: number;
+  lastSn: number;
+  inputs: GameStateSystemInput[] = [];
 
-  constructor(frameNo: number) {
+  constructor(frameNo: number, lastSn: number) {
     this.frameNo = frameNo;
+    this.lastSn = lastSn;
   }
 
-  static decode(data: Blob, players: Player[],
-    complete: (_: ServerUpdateFrame) => void) {
+  static decode(
+    data: Blob, players: Player[], complete: (_: ServerUpdateFrame) => void) {
     const reader = new FileReader();
     reader.onload = (ev) => {
       if (ev.target.readyState != FileReader.DONE) {
@@ -18,24 +21,26 @@ export default class ServerUpdateFrame {
       }
   
       const dv = new DataView(ev.target.result as ArrayBuffer);
-      // 读更新帧的当前帧号（3字节）
-      const serverUpdateFrame = new ServerUpdateFrame(
-        dv.getUint32(0, true) & 0xFFFFFF);
+      const frameNo = dv.getUint32(0, true) & 0xFFFFFF;
+      // 读更新帧的最后帧号
+      const updateFrame = new ServerUpdateFrame(frameNo, dv.getUint32(0, true));
+      updateFrame.lastSn = dv.getUint32(3, true);
 
-      let offset = 3;
-      // 对所有玩家
-      players.forEach((player) => {
-        // 读输入帧的数量
-        const frameCount =  dv.getUint8(offset++);
-        const inputs: FrameInput[] = [];
-        for (let f = 0; f < frameCount; f++) {
-          // 读输入帧
-          inputs.push(FrameInput.decode(dv.getUint32(offset, true)));
-          offset += 4;
+      let offset = 7;
+      const { inputs } = updateFrame;
+      while (offset < dv.byteLength) {
+        const type = dv.getUint8(offset++);
+        let input;
+        if (type == 2) {
+          const playerIndex = dv.getUint8(offset++);
+          const states = PlayerInput.decodeButtonStates(
+            dv.getUint8(offset++));
+          input = new PlayerInput(players[playerIndex].id, -1, states);
         }
-        serverUpdateFrame.playerFrameInputQueue.set(player.id, inputs);
-      });
-      complete(serverUpdateFrame);
+        if (input) inputs.push(input);
+      }
+      //console.log(JSON.stringify(updateFrame));
+      complete(updateFrame);
     };
     reader.readAsArrayBuffer(data);
   }

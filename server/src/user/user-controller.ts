@@ -34,7 +34,7 @@ export default class UserController {
 
   login(req: Request, res: Response) {
     if (req.body.username == 'guest') {
-      const user = new User(new Date().getTime());
+      const user = new User((Math.floor(Date.now() / 1000)));
       this.server.userManager.add(user);
       res.status(200).send({
         token: createToken(user),

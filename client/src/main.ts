@@ -4,7 +4,7 @@ import Player from './gameplay/player';
 import GameLoop from './game-loop';
 import { User } from './user';
 import { parseSearchParams } from './utils';
-import SocketClient, { MsgEvent } from './ws';
+import SocketClient, { ServerMsg } from './ws';
 
 window.addEventListener('load', () => {
   const loadingEl = document.getElementById('loading');
@@ -29,13 +29,13 @@ window.addEventListener('load', () => {
       const game = new Game(gameLoop, apiAccess, socketClient);
 
       socketClient.onMessage((msg) => {
-        if (!(msg instanceof MsgEvent)) {
+        if (!(msg instanceof ServerMsg)) {
           return;
         }
         if (msg.type == 'start') {
           // start会发多次
           if (!game.isStarted) {
-            game.serverUpdateFPS = msg.data.fps;
+            game.updateFPS = msg.data.fps;
             apiAccess.http.get(`/room/${roomId}/users`).then((ret) => {
               game.start(ret.data.map((p: any) => new Player(p.id)));
             });

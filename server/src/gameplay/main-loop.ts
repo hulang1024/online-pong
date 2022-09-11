@@ -2,7 +2,7 @@
 type FixedUpdate = (delta: number) => void;
 
 export interface FixedUpdatable {
-  msPerFrame: number;
+  sPerFrame: number;
   fixedUpdate: FixedUpdate;
 }
 
@@ -12,7 +12,7 @@ export default class MainLoop {
   private objects: FixedUpdatable[] = [];
   private fixedUpdates: FixedUpdate[] = [];
   // 固定更新时长（与FixedUpdatable同索引访问）
-  private msPerFrames: number[] = [];
+  private sPerFrames: number[] = [];
   // 游戏时间相对于实际时间的延迟
   private lags: number[] = [];
 
@@ -37,23 +37,23 @@ export default class MainLoop {
     let lastTime = 0;
     let elapsed = 0;
 
-    const { fixedUpdates, msPerFrames, lags } = this;
+    const { fixedUpdates, sPerFrames: sPerFrames, lags } = this;
     const loop = () => {
-      nowTime = new Date().getTime();
-      elapsed = nowTime - lastTime;
+      nowTime = Date.now();
+      elapsed = (nowTime - lastTime) * 0.001;
       lastTime = nowTime;
 
       let cnt = fixedUpdates.length;
       for (let i = 0; i < cnt; i++) {
         lags[i] += elapsed;
-        while (lags[i] >= msPerFrames[i]) {
-          fixedUpdates[i](msPerFrames[i]);
-          lags[i] -= msPerFrames[i];
+        while (lags[i] >= sPerFrames[i]) {
+          fixedUpdates[i](sPerFrames[i]);
+          lags[i] -= sPerFrames[i];
         }
       }
     };
 
-    lastTime = new Date().getTime();
+    lastTime = Date.now();
     this.timer = setInterval(loop, 0);
   }
 
@@ -61,7 +61,7 @@ export default class MainLoop {
     if (!this.objects.includes(o)) {
       this.objects.push(o);
       this.fixedUpdates.push(o.fixedUpdate.bind(o));
-      this.msPerFrames.push(o.msPerFrame);
+      this.sPerFrames.push(o.sPerFrame);
       this.lags.push(0);
       this.startLoop();
     }
@@ -72,7 +72,7 @@ export default class MainLoop {
     if (i >= 0) {
       this.objects.slice(i, 1);
       this.fixedUpdates.splice(i, 1);
-      this.msPerFrames.slice(i, 1);
+      this.sPerFrames.slice(i, 1);
       this.lags.slice(i, 1);
       if (!this.fixedUpdates.length) {
         this.stopLoop();
@@ -80,11 +80,11 @@ export default class MainLoop {
     }
   }
 
-  setMSPerFrame(o: FixedUpdatable, msPerFrame: number) {
+  setMSPerFrame(o: FixedUpdatable, sPerFrame: number) {
     const i = this.fixedUpdates.indexOf(o.fixedUpdate);
     if (i > 0) {
-      o.msPerFrame = msPerFrame;
-      this.msPerFrames[i] = msPerFrame;
+      o.sPerFrame = sPerFrame;
+      this.sPerFrames[i] = sPerFrame;
     }
   }
 }

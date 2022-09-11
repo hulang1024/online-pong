@@ -12,8 +12,8 @@ export default class Player {
   room: Room = Room.Null;
   game: Game | null = null;
   isReadyRecvFrame = false;
-  //每个输入：<帧号(3B)><输入信息(1B)>
-  frameInputQueue: number[][] = [];
+  // 最后帧号
+  lastSn = 0;
   
   constructor(user: User) {
     this.id = user.id;
@@ -54,6 +54,3 @@ export class PlayerManager {
     this.players.delete(id);
   }
 }
-
-// 表示空输入，在第n个更新帧时未收到客户端数据则会指定此值
-export const EMPTY_INPUTS = [];

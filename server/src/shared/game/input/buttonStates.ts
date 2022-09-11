@@ -30,4 +30,8 @@ export default class ButtonStates<TButton> {
     }
     return true;
   }
+
+  clone() {
+    return new ButtonStates<TButton>([...this.pressedButtons]);
+  }
 }
