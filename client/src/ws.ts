@@ -62,7 +62,7 @@ export default class SocketClient {
         this.throttlingMsgQueue.push(msg);
         setTimeout(() => {
           this.triggerMessageListeners( this.throttlingMsgQueue.shift() );
-        }, Math.random() * 1000);
+        }, Math.random() * 500 + 50);
       } else {
         this.triggerMessageListeners(msg);
       }

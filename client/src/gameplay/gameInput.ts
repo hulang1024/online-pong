@@ -1,4 +1,4 @@
-import KeyboardKey, { fromKeyboardEvent } from "../input/keyboard-key";
+import KeyboardKey, { fromKeyboardEvent } from "../input/keyboardKey";
 import ButtonStates from "../shared/game/input/buttonStates";
 import GameButton from "../shared/game/input/gameButton";
 

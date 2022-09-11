@@ -1,7 +1,7 @@
-import ServerUpdateFrame from './server-update-frame';
+import ServerUpdateFrame from './serverUpdateFrame';
 import SocketClient from '../ws';
 import APIAccess from '../api/api';
-import GameInput from './game-input';
+import GameInput from './gameInput';
 import Ball from './renderers/ball';
 import Paddle from './renderers/paddle';
 import Player from './player';
@@ -94,12 +94,7 @@ export default class Game {
   }
 
   fixedUpdate(delta: number) {
-    if (this.isPause || this.lastRecvServerUpdateTime == 0) return;
-    if ((Date.now() - this.lastRecvServerUpdateTime) >= 1000 / this.updateFPS) {
-      if (this.pendingInputs.length) {
-        return;
-      }
-    }
+    if (this.isPause) return;
 
     // 如果有按钮按下状态总是发送
     // 或者有变化，例如最后一次松开（但之后依然是松开状态即没有变化）也发送

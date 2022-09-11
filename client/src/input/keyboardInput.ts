@@ -1,5 +1,5 @@
 import ButtonStates from "../shared/game/input/buttonStates";
-import KeyboardKey, { fromKeyboardEvent } from "./keyboard-key";
+import KeyboardKey, { fromKeyboardEvent } from "./keyboardKey";
 
 type KeyListener = (key: KeyboardKey) => void;
 
