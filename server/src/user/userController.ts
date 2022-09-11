@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import GameServer from "../game-server";
+import GameServer from "../gameServer";
 import User from "./user";
 import { AuthRequest, createToken } from "../api/auth";
 

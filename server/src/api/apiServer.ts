@@ -1,10 +1,10 @@
 import express, { Request, Response } from "express";
-import { SECRET_KEY } from "../api/auth";
+import { SECRET_KEY } from "./auth";
 import { expressjwt } from 'express-jwt';
-import GameServer from "../game-server";
-import RoomController from "../room/room-controller";
-import UserController from "../user/user-controller";
-import GameController from "../game-controller";
+import GameServer from "../gameServer";
+import RoomController from "../room/roomController";
+import UserController from "../user/userController";
+import GameController from "../gameController";
 
 const app = express();
 

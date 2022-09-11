@@ -1,6 +1,6 @@
 import Player from "./player";
 import Game from "./game";
-import MainLoop, { FixedUpdatable } from "./main-loop";
+import MainLoop, { FixedUpdatable } from "./mainLoop";
 import GameStateSystem from "../shared/game/gameStateSystem";
 import PlayerInput from "../shared/game/input/playerInput";
 import { GameStateSystemInput, GameStateSystemInputTypeFlag } from "../shared/game/input";

@@ -1,6 +1,6 @@
-import GameServer from "../game-server";
+import GameServer from "../gameServer";
 import Room from "../room/room";
-import GameLoop from "./game-loop";
+import GameLoop from "./gameLoop";
 
 export default class Game {
   room: Room;

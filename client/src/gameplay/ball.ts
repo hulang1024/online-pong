@@ -1,7 +1,7 @@
-import BallState from "../../shared/game/states/ballState";
+import BallState from "../shared/game/states/ballState";
 import TWEEN, { Tween } from 'tween.ts';
-import Vector2 from "../../shared/game/vector";
-import Game from "../game";
+import Vector2 from "../shared/game/vector";
+import Game from "./game";
 
 export default class Ball {
   private _state: BallState;

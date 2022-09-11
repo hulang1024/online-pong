@@ -1,7 +1,7 @@
 import APIAccess from './api/api';
 import Game from './gameplay/game';
 import Player from './gameplay/player';
-import GameLoop from './game-loop';
+import GameLoop from './gameLoop';
 import { User } from './user';
 import { parseSearchParams } from './utils';
 import SocketClient, { ServerMsg } from './ws';

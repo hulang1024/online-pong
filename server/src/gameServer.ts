@@ -2,10 +2,10 @@ import { WebSocket, Server, RawData } from 'ws';
 import { UserManager } from './user/user';
 import { verifyToken } from './api/auth';
 import Player, { PlayerManager } from './gameplay/player';
-import RoomManager from './room/room-manager';
+import RoomManager from './room/roomManager';
 import { GameManager } from './gameplay/game';
-import MainLoop from './gameplay/main-loop';
-import GameLoop from './gameplay/game-loop';
+import MainLoop from './gameplay/mainLoop';
+import GameLoop from './gameplay/gameLoop';
 
 export default class GameServer {
   wsServer: Server<WebSocket> | null = null;

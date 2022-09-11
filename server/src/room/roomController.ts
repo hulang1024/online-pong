@@ -1,5 +1,5 @@
 import { Request, Response, Router } from "express";
-import GameServer from "../game-server";
+import GameServer from "../gameServer";
 import { AuthRequest } from "../api/auth";
 
 export default class RoomController {
