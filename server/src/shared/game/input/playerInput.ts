@@ -2,14 +2,17 @@ import GameButton from "./gameButton";
 import ButtonStates from "./buttonStates";
 
 export default class PlayerInput {
+  // 所属玩家
   playerId!: number;
+  // 序列号
   sn: number;
+  // 按钮状态
   buttonStates: ButtonStates<GameButton>;
 
-  constructor(playerId: number, sn: number, buttonStates: ButtonStates<GameButton>) {
+  constructor(playerId: number, sn: number, bs: ButtonStates<GameButton>) {
     this.playerId = playerId;
     this.sn = sn;
-    this.buttonStates = buttonStates;
+    this.buttonStates = bs;
   }
 
   /**
@@ -17,38 +20,30 @@ export default class PlayerInput {
    */
   encode() {
     const ret = new Uint32Array(1);
-    let v = this.sn << 8;
-    ret[0] = PlayerInput.encodeButtonStates(v, this.buttonStates);
+    ret[0] = (this.sn << 8) | PlayerInput.encodeButtonStates(this.buttonStates);
     return ret;
   }
 
-  encodeButtonStates() {
-    return PlayerInput.encodeButtonStates(0, this.buttonStates);
+  static encodeButtonStates(bs: ButtonStates<GameButton>) {
+    let val = 0;
+    for (const b in GameButton) {
+      if (isNaN(+b)) break;
+      val |= +bs.isPressed(+b);
+    }
+    return val;
   }
 
-  static encodeButtonStates(v: number, buttonStates: ButtonStates<GameButton>) {
-    if (buttonStates.isPressed(GameButton.Up))    v |= 1;
-    if (buttonStates.isPressed(GameButton.Right)) v |= 2;
-    if (buttonStates.isPressed(GameButton.Down))  v |= 4;
-    if (buttonStates.isPressed(GameButton.Left))  v |= 8;
-    if (buttonStates.isPressed(GameButton.Serve)) v |= 16;
-    return v;
-  }
-
-  static decode(playerId: number, val: number) {
-    const sn = val >> 8;
-    val &= 0xFF;
-    const buttonStates = PlayerInput.decodeButtonStates(val);
-    return new PlayerInput(playerId, sn, buttonStates);
+  static decode(val: number) {
+    return new PlayerInput(0,
+      val >> 8, PlayerInput.decodeButtonStates(val & 0xFF));
   }
   
   static decodeButtonStates(val: number) {
-    const pressedButtons = [];
-    if (val & 1) pressedButtons.push(GameButton.Up);
-    if (val & 2) pressedButtons.push(GameButton.Right);
-    if (val & 4) pressedButtons.push(GameButton.Down);
-    if (val & 8) pressedButtons.push(GameButton.Left);
-    if (val & 16) pressedButtons.push(GameButton.Serve);
+    const pressedButtons: GameButton[] = [];
+    for (const b in GameButton) {
+      if (isNaN(+b)) break;
+      if (val & +b) pressedButtons.push(+b);
+    }
     return new ButtonStates<GameButton>(pressedButtons);
   }
 }

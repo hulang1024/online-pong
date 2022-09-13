@@ -1,11 +1,11 @@
 // 游戏按钮（逻辑按钮）
 enum GameButton {
-  // 移动方向
+  // 移动
   Up = 1,
-  Right,
-  Down,
-  Left,
+  Right = 2,
+  Down = 4,
+  Left = 8,
   // 发球
-  Serve
+  Serve = 16
 };
 export default GameButton;

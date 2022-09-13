@@ -60,7 +60,8 @@ export default class GameLoop implements FixedUpdatable {
         dv.setUint8(offset++, GameStateSystemInputTypeFlag.PlayerInput);
         dv.setUint8(offset++,
           this.players.findIndex((p) => p.id == input.playerId));
-        dv.setUint8(offset++, input.encodeButtonStates());
+        dv.setUint8(offset++,
+          PlayerInput.encodeButtonStates(input.buttonStates));
       }
     });
 
@@ -75,7 +76,8 @@ export default class GameLoop implements FixedUpdatable {
   handlePlayerInput(data: Buffer, player: Player) {
     for (let b = 0, cnt = data.byteLength; b < cnt; b += 4) {
       const val = data.readUint32LE(b);
-      const input = PlayerInput.decode(player.id, val);
+      const input = PlayerInput.decode(val);
+      input.playerId = player.id;
       player.lastSn = input.sn;
       this.inputBuffer.push(input);
     }
