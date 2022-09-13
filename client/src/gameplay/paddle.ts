@@ -1,7 +1,7 @@
-import PlayerPaddleState from "../../shared/game/states/playerPaddleState";
+import PlayerPaddleState from "../shared/game/states/playerPaddleState";
 import TWEEN, { Tween } from 'tween.ts';
-import Vector2 from "../../shared/game/vector";
-import Game from "../game";
+import Vector2 from "../shared/game/vector";
+import Game from "./game";
 
 export default class Paddle {
   id: number;
@@ -51,7 +51,7 @@ export default class Paddle {
   }
 
   draw() {
-    this.context2d.fillStyle = this.color;
+    //this.context2d.fillStyle = this.color;
     this.context2d.fillRect(
       this.position.x, this.position.y, this.state.width, this.state.height);
   }

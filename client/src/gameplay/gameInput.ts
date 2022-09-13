@@ -16,8 +16,9 @@ function fromKeyboardKey(key: KeyboardKey) {
     case KeyboardKey.Left:
     case KeyboardKey.A:
       return GameButton.Left;
+    case KeyboardKey.Enter:
     case KeyboardKey.Space:
-      return GameButton.Serve;
+      return GameButton.Ok;
   }
   return null;
 }
@@ -41,7 +42,6 @@ class GameInputStates extends ButtonStates<GameButton> {
         });
       }
     });
-    
     document.addEventListener('keyup', (e) => {
       const btn = fromKeyboardKey(fromKeyboardEvent(e));
       if (btn && this.setPressed(btn, false)) {
@@ -50,6 +50,11 @@ class GameInputStates extends ButtonStates<GameButton> {
         });
       }
     });
+  }
+
+  reset() {
+    this.pressedButtons = [];
+    this.lastPressedButtons = [];
   }
   
   hasChanged() {
@@ -69,10 +74,7 @@ class GameInputStates extends ButtonStates<GameButton> {
     }
 
     if (changed) {
-      this.lastPressedButtons = [];
-      for (let i = 0; i < this.pressedButtons.length; i++) {
-        this.lastPressedButtons.push(this.pressedButtons[i]);
-      }
+      this.lastPressedButtons = [...this.pressedButtons];
     }
 
     return changed;

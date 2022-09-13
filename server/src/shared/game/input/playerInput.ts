@@ -24,11 +24,11 @@ export default class PlayerInput {
     return ret;
   }
 
-  static encodeButtonStates(bs: ButtonStates<GameButton>) {
+  static encodeButtonStates(buttonStates: ButtonStates<GameButton>) {
     let val = 0;
     for (const b in GameButton) {
       if (isNaN(+b)) break;
-      val |= +bs.isPressed(+b);
+      if (buttonStates.isPressed(+b)) val |= +b;
     }
     return val;
   }

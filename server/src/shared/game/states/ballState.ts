@@ -1,4 +1,3 @@
-import GameStates from ".";
 import GameStateSystem from "../gameStateSystem";
 import { checkCircleAndRectCollision } from "../physics";
 import { randomRange } from "../random";
@@ -13,17 +12,26 @@ export default class BallState {
   readonly maxSpeed = 6 * 62;
   readonly minSpeed = 3 * 62;
   readonly gravity = 0 * 62;
-  readonly radius = 8;
+  readonly radius = 6;
   viewport: Viewport;
   stateSystem: GameStateSystem;
 
-  constructor(stateSystem: GameStateSystem, viewport: Viewport) {
+  constructor(stateSystem: GameStateSystem) {
     this.stateSystem = stateSystem;
-    this.viewport = viewport;
+    this.viewport = stateSystem.viewport;
+  }
+
+  reset() {
+    this.position.set(this.viewport.width / 2, this.viewport.height / 2);
+  }
+
+  serve(yDir: 1 | -1) {
+    this.vel.y = yDir * randomRange(this.minSpeed, this.maxSpeed);
+    this.vel.x = randomRange(-this.minSpeed, this.minSpeed);
   }
 
   clone() {
-    const copied = new BallState(this.stateSystem, this.viewport);
+    const copied = new BallState(this.stateSystem);
     copied.position = this.position.clone();
     copied.vel = this.vel.clone();
     return copied;
@@ -41,8 +49,9 @@ export default class BallState {
       if (checkCircleAndRectCollision(this, paddleState)) {
         this.position.y -= this.vel.y * delta;
         this.position.x -= this.vel.x * delta;
-        this.vel.x = -this.vel.x * randomRange(1, 2);
-        this.vel.y = -this.vel.y * randomRange(1, 2);
+        this.vel.x = -this.vel.x * randomRange(1, 1.5);
+        this.vel.y = -this.vel.y * randomRange(1, 1.5);
+        this.stateSystem.handlePaddleHit(paddleState);
         break;
       }
     }
@@ -56,17 +65,21 @@ export default class BallState {
 
     if (this.position.x - this.radius < 0) {
       this.position.x = this.radius;
-      this.vel.x = -this.vel.x * randomRange(1, 2);
+      this.vel.x = -this.vel.x * randomRange(1, 1.5);
+      this.stateSystem.handleBorderHit(Vector2.LEFT);
     } else if (this.position.x > this.viewport.width - this.radius) {
       this.position.x = this.viewport.width - this.radius;
-      this.vel.x = -this.vel.x * randomRange(1, 2);
+      this.vel.x = -this.vel.x * randomRange(1, 1.5);
+      this.stateSystem.handleBorderHit(Vector2.RIGHT);
     }
     if (this.position.y - this.radius < 0) {
       this.position.y = this.radius;
-      this.vel.y = -this.vel.y * randomRange(1, 2);
+      this.vel.y = -this.vel.y * randomRange(1, 1.5);
+      this.stateSystem.handleBorderHit(Vector2.UP);
     } else if (this.position.y > this.viewport.height - this.radius) {
       this.position.y = this.viewport.height - this.radius;
-      this.vel.y = -this.vel.y * randomRange(1, 2);
+      this.vel.y = -this.vel.y * randomRange(1, 1.5);
+      this.stateSystem.handleBorderHit(Vector2.DOWN);
     }
   }
 }

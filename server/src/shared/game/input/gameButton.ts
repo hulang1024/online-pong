@@ -5,7 +5,7 @@ enum GameButton {
   Right = 2,
   Down = 4,
   Left = 8,
-  // 发球
-  Serve = 16
+  // 发球/开始/暂停/继续
+  Ok = 16,
 };
 export default GameButton;

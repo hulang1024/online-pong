@@ -5,8 +5,14 @@ import GameLoop from './gameLoop';
 import { User } from './user';
 import { parseSearchParams } from './utils';
 import SocketClient, { ServerMsg } from './ws';
+import { loadSounds } from './sound';
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
+  await loadSounds();
+  load();
+});
+
+const load = () => {
   const loadingEl = document.getElementById('loading');
 
   const apiAccess = new APIAccess();
@@ -60,4 +66,4 @@ window.addEventListener('load', () => {
       console.error(e);
       alert('验证失败');
     });
-});
+};

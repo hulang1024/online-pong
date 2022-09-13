@@ -6,7 +6,7 @@ export function drawDebugInfo(game: Game) {
   let y = 0;
   const newLine = () => y += 20;
 
-  context2d.font = '14px monospace';
+  context2d.font = '14px pixel';
   context2d.fillStyle = '#00ff00';
   context2d.fillText(
     `Update FPS: ${game.updateFPS} (${(1000 / game.updateFPS).toFixed(1)}ms)`,

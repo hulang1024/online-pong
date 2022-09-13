@@ -3,7 +3,7 @@ import SocketClient from '../ws';
 import APIAccess from '../api/api';
 import GameInput from './gameInput';
 import Ball from './ball';
-import Paddle from './renderers/paddle';
+import Paddle from './paddle';
 import Player from './player';
 import { createCanvas } from '../canvas';
 import { SceneManager } from './scenes/scene';
@@ -14,6 +14,10 @@ import GameStateSystem from '../shared/game/gameStateSystem';
 import PlayerInput from '../shared/game/input/playerInput';
 import GameButton from '../shared/game/input/gameButton';
 import { drawDebugInfo } from './debugLayer';
+import PlayerPaddleState from '../shared/game/states/playerPaddleState';
+import { sounds } from '../sound';
+import Vector2 from '../shared/game/vector';
+import { Scoerboard } from './scoreboard';
 
 export default class Game {
   apiAccess: APIAccess;
@@ -24,6 +28,8 @@ export default class Game {
   localPlayer: Player;
 
   ball: Ball;
+
+  scoreboard = new Scoerboard();
 
   gameStateSystem = new GameStateSystem(false);
   
@@ -57,15 +63,27 @@ export default class Game {
       new ServeScene(this),
       new PlayScene(this)
     ]);
+    
+    this.gameStateSystem.onPaddleHit = () => {
+      sounds['paddle_hit'].play();
+    };
+    this.gameStateSystem.onWallHit = () => {
+      sounds['wall_hit'].play();
+    };
+    this.gameStateSystem.onScore = () => {
+      sounds['score'].play();
+    };
 
     const canvas = createCanvas({
       id: 'canvas1',
       width: this.gameStateSystem.viewport.width,
       height: this.gameStateSystem.viewport.height,
+      scalePixel: true,
     });
     this.canvas = canvas;
     this.context2d = canvas.getContext('2d');
-    this.context2d.font = '14px sans-serif';
+    this.context2d.font = '14px pixel';
+    this.context2d.fillStyle = '#fafafa';
     document.body.appendChild(canvas);
 
     //this.socketClient.enableThrottling = true;
@@ -80,9 +98,13 @@ export default class Game {
   }
 
   draw(delta: number) {
-    const { states } = this.gameStateSystem;
+    const { states, gameState } = this.gameStateSystem;
 
     this.context2d.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    this.scoreboard.gameStates = states;
+    this.scoreboard.draw();
+
     this.players.forEach((player, i) => {
       player.paddle.updateState(states.paddleStates[i]);
       player.paddle.draw();
@@ -90,7 +112,26 @@ export default class Game {
     this.ball.updateState(states.ballState);
     this.ball.draw();
 
-    drawDebugInfo(this);
+    if (gameState != 'play') {
+      this.context2d.font = `${26}px pixel`;
+      this.context2d.textAlign = 'center';
+      const baseX = this.gameStateSystem.viewport.width / 2;
+      const baseY = this.gameStateSystem.viewport.height / 2 - 80;
+      if (gameState == 'serve') {
+        this.context2d.fillText(
+          `Player ${this.gameStateSystem.servingPlayerNo} 's serve`, baseX, baseY);
+        // todo: 本地玩家不提示
+        this.context2d.fillText('Press Space to serve!', baseX, baseY + 40);
+      } else if (gameState == 'pause') {
+        this.context2d.fillText(`Paused`, baseX, baseY);
+        this.context2d.fillText('Press Space to resume!', baseX, baseY + 40);
+      } else if (gameState == 'start') {
+        this.context2d.fillText('Welcome to Pong!', baseX, baseY)
+        this.context2d.fillText('Press Space to begin!', baseX, baseY + 40);
+      }
+    }
+    
+    //drawDebugInfo(this);
   }
 
   fixedUpdate(delta: number) {
@@ -106,7 +147,11 @@ export default class Game {
   private sendPlayerInput(delta: number) {
     const input = new PlayerInput(
       this.localPlayer.id, ++this.lastSn, GameInput.clone());
-    if (!GameInput.isPressed(GameButton.Serve)) {
+    if (GameInput.isPressed(GameButton.Ok)) {
+      // 一般功能键只上传服务端但本地不预执行
+      GameInput.reset();
+    } else {
+      // 预执行控制玩家的输入
       this.pendingInputs.push(input);
       this.gameStateSystem.applyInput(input, delta);
     }
@@ -139,6 +184,10 @@ export default class Game {
     }
     this.pendingInputs.splice(0, removeLen);
     this.gameStateSystem.applyInputs(this.pendingInputs, S_PER_UPDATE);
+
+    if (this.gameStateSystem.gameState == 'serve') {
+      this.ball.setState(this.gameStateSystem.states.ballState);
+    }
   }
 
   start(players: Player[]) {
@@ -170,6 +219,9 @@ export default class Game {
     this.ball = new Ball(this);
     this.ball.setState(this.gameStateSystem.states.ballState);
     this.ball.context2d = this.context2d;
+
+    this.scoreboard.viewport = this.gameStateSystem.viewport;
+    this.scoreboard.context2d = this.context2d;
 
     this.sceneManager.enter('serve', players[0]);
 

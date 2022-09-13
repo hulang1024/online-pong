@@ -6,6 +6,7 @@ import GameStates from "./states";
 import BallState from "./states/ballState";
 import PlayerPaddleState from "./states/playerPaddleState";
 import Viewport from "./viewport";
+import Vector2 from "./vector";
 
 const FPS = 60;
 const S_PER_UPDATE = 1 / FPS;
@@ -17,41 +18,41 @@ export default class GameStateSystem {
   private _states!: GameStates;
   // 当状态变化时，该引用会变化，获取最新状态请使用 gameStateSystem.states
   get states(): Readonly<GameStates> { return this._states; }
-
+  private lastSaveStates: GameStates | null = null;
+  viewport!: Viewport;
+  servingPlayerNo = 1 as 1 | 2;
+  gameState = 'start' as 'start' | 'pause' | 'serve' | 'play'
   private updateLag = 0;
 
-  // 是否已发球（TODO：用游戏状态机替换）
-  private isServed = false;
-
-  private lastSaveStates: GameStates | null = null;
-
-  viewport!: Viewport;
+  onPaddleHit = (paddleState: PlayerPaddleState) => {};
+  onWallHit = (border: Vector2) => {};
+  onScore = () => {};
 
   constructor(serverMode: boolean) {
     this.serverMode = serverMode;
     this.viewport = new Viewport(500, 500);
     // 初始化状态
     this._states = new GameStates();
-    const ballState = new BallState(this, this.viewport);
-    ballState.viewport = this.viewport;
-    ballState.position.set(this.viewport.width / 2, this.viewport.height / 2);
+    const ballState = new BallState(this);
+    ballState.reset();
     this._states.ballState = ballState;
 
     initRandomSeed(10);
   }
 
   initPlayers(playerIds: number[]) {
+    const { viewport } = this;
     // 创建Paddle
     playerIds.forEach((playerId, i) => {
-      const paddleState = new PlayerPaddleState(this.viewport);
+      const paddleState = new PlayerPaddleState(viewport);
       paddleState.playerId = playerId;
-      paddleState.viewport = this.viewport;
+      paddleState.viewport = viewport;
       if (i % 2 == 0) {
-        paddleState.position.set((this.viewport.width - paddleState.width) / 2, 0);
+        paddleState.position.set(30, 10);
       } else {
         paddleState.position.set(
-          (this.viewport.width - paddleState.width) / 2,
-          this.viewport.height - paddleState.height);
+          viewport.width - paddleState.width - 30,
+          viewport.height - paddleState.height - 10);
       }
       this._states.paddleStates.push(paddleState);
     });
@@ -74,7 +75,9 @@ export default class GameStateSystem {
   update(delta: number) {
     this.updateLag += delta;
     while (this.updateLag >= S_PER_UPDATE) {
-      this._states.ballState.update(S_PER_UPDATE);
+      if (this.gameState == 'play') {
+        this._states.ballState.update(S_PER_UPDATE);
+      }
       this.updateLag -= S_PER_UPDATE;
     }
   }
@@ -85,18 +88,49 @@ export default class GameStateSystem {
 
   applyInput(input: GameStateSystemInput, delta: number) {
     if (input instanceof PlayerInput) {
-      if (input.buttonStates.isPressed(GameButton.Serve)) {
-        if (!this.isServed) {
-          const { ballState } = this._states;
-          ballState.vel.y = randomRange(ballState.minSpeed, ballState.maxSpeed);
-          ballState.vel.x = randomRange(-ballState.minSpeed, ballState.minSpeed);
-          this.isServed = true;
+      if (this.gameState == 'play') {
+        if (input.buttonStates.isPressed(GameButton.Ok)) {
+          this.gameState = 'pause';
+        } else {
+          const paddleState = this._states.paddleStates.find(
+            (p) => p.playerId == input.playerId);
+          paddleState?.update(delta, input.buttonStates);  
         }
-      } else {
-        const paddleState = this._states.paddleStates.find(
-          (p) => p.playerId == input.playerId);
-        paddleState?.update(delta, input.buttonStates);
+      } else if (this.gameState == 'serve') {
+        if (input.buttonStates.isPressed(GameButton.Ok)) {
+          this._states.ballState.serve(this.servingPlayerNo == 1 ? 1 : -1);
+          this.gameState = 'play';
+        }
+      } else if (this.gameState == 'pause') {
+        if (input.buttonStates.isPressed(GameButton.Ok)) {
+          this.gameState = 'play';
+        }
+      } else if (this.gameState == 'start') {
+        if (input.buttonStates.isPressed(GameButton.Ok)) {
+          this.gameState = 'serve';
+        }
+      } 
+    }
+  }
+
+  handlePaddleHit(paddleState: PlayerPaddleState) {
+    this.onPaddleHit(paddleState);
+  }
+
+  handleBorderHit(border: Vector2) {
+    if (border.y != 0) {
+      if (border.y > 0) {
+        this._states.score1++;
+        this.servingPlayerNo = 2;
+      } else if (border.y < 0) {
+        this._states.score2++;
+        this.servingPlayerNo = 1;
       }
+      this.gameState = 'serve';
+      this._states.ballState.reset();
+      this.onScore();
+    } else {
+      this.onWallHit(border);
     }
   }
 }

@@ -1,4 +1,4 @@
-import Paddle from "./renderers/paddle";
+import Paddle from "./paddle";
 
 export default class Player {
   id: number;

@@ -6,8 +6,8 @@ import Viewport from "../viewport";
 export default class PlayerPaddleState {
   playerId!: number;
   position =  Vector2.Zero;
-  readonly width = 90;
-  readonly height = 15;
+  readonly width = 50;
+  readonly height = 12;
   speed = 8 * 62;
   dx = 0;
   viewport: Viewport;

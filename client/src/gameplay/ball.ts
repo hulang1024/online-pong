@@ -39,13 +39,16 @@ export default class Ball {
 
   setState(state: BallState) {
     this._state = state;
-    this.position.set(state.position.x, state.position.y);
+    const newPos = state.position;
+    this.targetPos.set(newPos.x, newPos.y);
+    this.position.set(newPos.x, newPos.y);
   }
 
   draw() {
-    this.context2d.fillStyle = '#eee';
-    this.context2d.beginPath();
-    this.context2d.arc(this.position.x, this.position.y, this._state.radius, 0, 360);
-    this.context2d.fill();
+    //this.context2d.fillStyle = '#eee';
+    const { radius } = this._state;
+    this.context2d.fillRect(
+      this.position.x - radius, this.position.y - radius,
+      radius * 2, radius * 2);
   }
 }
