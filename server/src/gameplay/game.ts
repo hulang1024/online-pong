@@ -1,9 +1,11 @@
 import GameServer from "../gameServer";
 import Room from "../room/room";
+import PongAI from "./bot/pongAI";
 import GameLoop from "./gameLoop";
 
 export default class Game {
   room: Room;
+  ai: PongAI[] = [];
   server: GameServer;
   gameLoop: GameLoop;
   state = GameState.Ready;
@@ -29,6 +31,12 @@ export default class Game {
     this.server.mainLoop.add(this.gameLoop);
     this.gameLoop.isPause = false;
     this.state = GameState.Playing;
+
+    this.room.players
+      .filter((p) => p.isBot())
+      .forEach((p) => {
+        this.ai.push(new PongAI(p, this.gameLoop));
+      });
   }
 
   pause() {

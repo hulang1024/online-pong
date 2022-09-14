@@ -2,22 +2,20 @@ import ServerUpdateFrame from './serverUpdateFrame';
 import SocketClient from '../ws';
 import APIAccess from '../api/api';
 import GameInput from './gameInput';
+import PlayerInput from '../shared/game/input/playerInput';
+import GameButton from '../shared/game/input/gameButton';
+import GameLoop from '../gameLoop';
+import GameStateSystem from '../shared/game/gameStateSystem';
 import Ball from './ball';
 import Paddle from './paddle';
 import Player from './player';
+import Scoreboard from './scoreboard';
 import { createCanvas } from '../canvas';
 import { SceneManager } from './scenes/scene';
 import { ServeScene } from './scenes/serveScene';
 import { PlayScene } from './scenes/playScene';
-import GameLoop, { S_PER_UPDATE } from '../gameLoop';
-import GameStateSystem from '../shared/game/gameStateSystem';
-import PlayerInput from '../shared/game/input/playerInput';
-import GameButton from '../shared/game/input/gameButton';
 import { drawDebugInfo } from './debugLayer';
-import PlayerPaddleState from '../shared/game/states/playerPaddleState';
 import { sounds } from '../sound';
-import Vector2 from '../shared/game/vector';
-import { Scoerboard } from './scoreboard';
 
 export default class Game {
   apiAccess: APIAccess;
@@ -29,7 +27,7 @@ export default class Game {
 
   ball: Ball;
 
-  scoreboard = new Scoerboard();
+  scoreboard = new Scoreboard();
 
   gameStateSystem = new GameStateSystem(false);
   
@@ -131,7 +129,7 @@ export default class Game {
       }
     }
     
-    //drawDebugInfo(this);
+    drawDebugInfo(this);
   }
 
   fixedUpdate(delta: number) {
@@ -145,8 +143,8 @@ export default class Game {
   }
 
   private sendPlayerInput(delta: number) {
-    const input = new PlayerInput(
-      this.localPlayer.id, ++this.lastSn, GameInput.clone());
+    const input = new PlayerInput(this.localPlayer.id, ++this.lastSn);
+    input.buttonStates = GameInput.clone();
     if (GameInput.isPressed(GameButton.Ok)) {
       // 一般功能键只上传服务端但本地不预执行
       GameInput.reset();
@@ -172,7 +170,7 @@ export default class Game {
     // 恢复到上次保存的权威状态
     this.gameStateSystem.restore();
     // 开始权威输入
-    this.gameStateSystem.applyInputs(update.inputs, S_PER_UPDATE);
+    this.gameStateSystem.applyInputs(update.inputs, 1 / this.updateFPS);
     this.gameStateSystem.update(1 / this.updateFPS);
     // 结束权威输入
     // 保存当前权威状态
@@ -183,7 +181,7 @@ export default class Game {
       removeLen++;
     }
     this.pendingInputs.splice(0, removeLen);
-    this.gameStateSystem.applyInputs(this.pendingInputs, S_PER_UPDATE);
+    this.gameStateSystem.applyInputs(this.pendingInputs, 1 / this.updateFPS);
 
     if (this.gameStateSystem.gameState == 'serve') {
       this.ball.setState(this.gameStateSystem.states.ballState);

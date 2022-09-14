@@ -29,7 +29,11 @@ export default class Player {
   }
 
   isOnline() {
-    return this.client?.readyState == 1;
+    return this.isBot() || this.client?.readyState == 1;
+  }
+
+  isBot() {
+    return this.id < 0;
   }
 
   send(data: any) {

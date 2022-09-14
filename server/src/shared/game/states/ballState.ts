@@ -11,7 +11,6 @@ export default class BallState {
   vel = Vector2.Zero;
   readonly maxSpeed = 6 * 62;
   readonly minSpeed = 3 * 62;
-  readonly gravity = 0 * 62;
   readonly radius = 6;
   viewport: Viewport;
   stateSystem: GameStateSystem;
@@ -38,8 +37,6 @@ export default class BallState {
   }
 
   update(delta: number) {
-    this.vel.y += this.gravity;
-
     this.position.x += this.vel.x * delta;
     this.position.y += this.vel.y * delta;
 

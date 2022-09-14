@@ -1,4 +1,5 @@
 import { GameStateSystemInput } from "../shared/game/input";
+import GameButtonStates from "../shared/game/input/gameButtonStates";
 import PlayerInput from "../shared/game/input/playerInput";
 import Player from "./player";
 
@@ -33,13 +34,12 @@ export default class ServerUpdateFrame {
         let input;
         if (type == 2) {
           const playerIndex = dv.getUint8(offset++);
-          const states = PlayerInput.decodeButtonStates(
-            dv.getUint8(offset++));
-          input = new PlayerInput(players[playerIndex].id, -1, states);
+          input = new PlayerInput(players[playerIndex].id, -1);
+          input.buttonStates = new GameButtonStates(dv.getUint8(offset++));
         }
         if (input) inputs.push(input);
       }
-      //console.log(JSON.stringify(updateFrame));
+      console.log(JSON.stringify(updateFrame));
       complete(updateFrame);
     };
     reader.readAsArrayBuffer(data);

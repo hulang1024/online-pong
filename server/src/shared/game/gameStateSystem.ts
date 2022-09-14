@@ -4,7 +4,7 @@ import GameButton from "./input/gameButton";
 import PlayerInput from "./input/playerInput";
 import GameStates from "./states";
 import BallState from "./states/ballState";
-import PlayerPaddleState from "./states/playerPaddleState";
+import PlayerPaddleState, { Y_OFFSET } from "./states/playerPaddleState";
 import Viewport from "./viewport";
 import Vector2 from "./vector";
 
@@ -48,11 +48,11 @@ export default class GameStateSystem {
       paddleState.playerId = playerId;
       paddleState.viewport = viewport;
       if (i % 2 == 0) {
-        paddleState.position.set(30, 10);
+        paddleState.position.set(30, Y_OFFSET);
       } else {
         paddleState.position.set(
           viewport.width - paddleState.width - 30,
-          viewport.height - paddleState.height - 10);
+          viewport.height - paddleState.height - Y_OFFSET);
       }
       this._states.paddleStates.push(paddleState);
     });
@@ -100,6 +100,10 @@ export default class GameStateSystem {
         if (input.buttonStates.isPressed(GameButton.Ok)) {
           this._states.ballState.serve(this.servingPlayerNo == 1 ? 1 : -1);
           this.gameState = 'play';
+        } else {
+          const paddleState = this._states.paddleStates.find(
+            (p) => p.playerId == input.playerId);
+          paddleState?.update(delta, input.buttonStates);  
         }
       } else if (this.gameState == 'pause') {
         if (input.buttonStates.isPressed(GameButton.Ok)) {

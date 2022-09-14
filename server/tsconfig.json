@@ -11,6 +11,11 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitAny": true,
-    "skipLibCheck": true                                
-  }
+    "skipLibCheck": true,             
+  },
+  "exclude": [
+    "scripts",
+    "build",
+    "node_modules"
+  ]
 }

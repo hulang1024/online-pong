@@ -4,6 +4,7 @@ import { verifyToken } from './api/auth';
 import Player, { PlayerManager } from './gameplay/player';
 import RoomManager from './room/roomManager';
 import { GameManager } from './gameplay/game';
+import BotManager from './gameplay/bot/botManager';
 import MainLoop from './gameplay/mainLoop';
 import GameLoop from './gameplay/gameLoop';
 
@@ -14,6 +15,7 @@ export default class GameServer {
   userManager = new UserManager();
   roomManager = new RoomManager();
   playerManager = new PlayerManager();
+  botPlayerManager = new BotManager(this.roomManager, this.playerManager);
 
   start(port: number) {
     this.wsServer = new Server({

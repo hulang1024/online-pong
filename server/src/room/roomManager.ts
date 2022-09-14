@@ -5,6 +5,7 @@ import Room from "./room";
 
 export default class RoomManager {
   rooms = new Map<number, Room>();
+  onJoin = (roomId: number) => {};
 
   create() {
     const room = new Room();
@@ -41,12 +42,19 @@ export default class RoomManager {
     }
 
     if (player.joinedRoom()) {
+      if (player.room.id == roomId) {
+        return 0;
+      }
       // 退出已加入的其它房间
       player.room.part(player);
     }
 
     // 加入
     room.join(player);
+
+    if (!player.isBot()) {
+      this.onJoin(roomId);
+    }
 
     return 0;
   }

@@ -3,6 +3,8 @@ import GameButton from "../input/gameButton";
 import Vector2 from "../vector";
 import Viewport from "../viewport";
 
+export const Y_OFFSET = 10;
+
 export default class PlayerPaddleState {
   playerId!: number;
   position =  Vector2.Zero;

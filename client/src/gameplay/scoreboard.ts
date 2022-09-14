@@ -1,7 +1,7 @@
 import GameStates from "../shared/game/states";
 import Viewport from "../shared/game/viewport";
 
-export class Scoerboard {
+export default class Scoreboard {
   gameStates: GameStates;
   viewport: Viewport;
   context2d: CanvasRenderingContext2D;

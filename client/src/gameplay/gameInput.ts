@@ -1,6 +1,6 @@
 import KeyboardKey, { fromKeyboardEvent } from "../input/keyboardKey";
-import ButtonStates from "../shared/game/input/buttonStates";
 import GameButton from "../shared/game/input/gameButton";
+import GameButtonStates from "../shared/game/input/gameButtonStates";
 
 function fromKeyboardKey(key: KeyboardKey) {
   switch (key) {
@@ -25,15 +25,12 @@ function fromKeyboardKey(key: KeyboardKey) {
 
 type ButtonListener = (btn: GameButton, down: boolean) => void;
 
-// 游戏全局输入状态
-class GameInputStates extends ButtonStates<GameButton> {
+class GameInputStates extends GameButtonStates {
   private buttonListeners: ButtonListener[] = [];
-
-  private lastPressedButtons: GameButton[] = [];
+  private lastStates = 0;
 
   constructor() {
-    super();
-
+    super(0);
     document.addEventListener('keydown', (e) => {
       const btn = fromKeyboardKey(fromKeyboardEvent(e));
       if (btn && this.setPressed(btn, true)) {
@@ -53,30 +50,15 @@ class GameInputStates extends ButtonStates<GameButton> {
   }
 
   reset() {
-    this.pressedButtons = [];
-    this.lastPressedButtons = [];
+    super.reset();
+    this.lastStates = 0;
   }
   
   hasChanged() {
-    let changed: boolean | null = null;
-    if (this.lastPressedButtons.length == this.pressedButtons.length) {
-      for (let i = 0; i < this.pressedButtons.length; i++) {
-        if (this.lastPressedButtons[i] != this.pressedButtons[i]) {
-          changed = true;
-          break;
-        }
-      }
-      if (changed !== null) {
-        changed = false;
-      }
-    } else {
-      changed = true;
-    }
-
+    let changed = this.states != this.lastStates;
     if (changed) {
-      this.lastPressedButtons = [...this.pressedButtons];
+      this.lastStates = this.states;
     }
-
     return changed;
   }
 

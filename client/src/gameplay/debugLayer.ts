@@ -6,6 +6,8 @@ export function drawDebugInfo(game: Game) {
   let y = 0;
   const newLine = () => y += 20;
 
+  context2d.save();
+  context2d.textAlign = 'left';
   context2d.font = '14px pixel';
   context2d.fillStyle = '#00ff00';
   context2d.fillText(
@@ -25,4 +27,5 @@ export function drawDebugInfo(game: Game) {
       16, newLine(),
     );
   });
+  context2d.restore();
 }

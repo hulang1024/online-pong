@@ -4,6 +4,7 @@ import MainLoop, { FixedUpdatable } from "./mainLoop";
 import GameStateSystem from "../shared/game/gameStateSystem";
 import PlayerInput from "../shared/game/input/playerInput";
 import { GameStateSystemInput, GameStateSystemInputTypeFlag } from "../shared/game/input";
+import PongAI from "./bot/pongAI";
 
 export default class GameLoop implements FixedUpdatable {
   mainLoop: MainLoop
@@ -11,6 +12,7 @@ export default class GameLoop implements FixedUpdatable {
   frameNo = 0;
   sPerFrame = 1 / this.fps;
   players: Player[] = [];
+  ai: PongAI[] = [];
   gameStateSystem!: GameStateSystem;
   inputBuffer: GameStateSystemInput[] = [];
   isPause = true;
@@ -19,6 +21,7 @@ export default class GameLoop implements FixedUpdatable {
     this.mainLoop = mainLoop;
     if (game) {
       this.players = game.room.players;
+      this.ai = game.ai;
 
       this.gameStateSystem = new GameStateSystem(true);
       this.gameStateSystem.initPlayers(this.players.map((p) => p.id));
@@ -29,13 +32,16 @@ export default class GameLoop implements FixedUpdatable {
     if (this.isPause) {
       return;
     }
+
     const { inputBuffer: inputs } = this;
     this.inputBuffer = [];
 
     this.gameStateSystem.applyInputs(inputs, delta);
     this.gameStateSystem.update(delta);
-
+    
     this.sync(inputs);
+
+    this.ai.forEach((ai) => ai.update(delta));
 
     this.frameNo++;
   }
@@ -60,16 +66,17 @@ export default class GameLoop implements FixedUpdatable {
         dv.setUint8(offset++, GameStateSystemInputTypeFlag.PlayerInput);
         dv.setUint8(offset++,
           this.players.findIndex((p) => p.id == input.playerId));
-        dv.setUint8(offset++,
-          PlayerInput.encodeButtonStates(input.buttonStates));
+        dv.setUint8(offset++, input.buttonStates.states);
       }
     });
 
     // 遍历房间内所有玩家
     this.players.forEach((player) => {
-      // 写玩家的最后序列号
-      dv.setUint32(3, player.lastSn, true);
-      player.send(Buffer.from(updateFrame));
+      if (!player.isBot()) {
+        // 写玩家的最后序列号
+        dv.setUint32(3, player.lastSn, true);
+        player.send(Buffer.from(updateFrame));
+      }
     });
   }
 

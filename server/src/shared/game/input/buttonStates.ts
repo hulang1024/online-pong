@@ -1,37 +1,16 @@
 /**
  * 表示一组按钮按下的状态
  */
-export default class ButtonStates<TButton> {
-  protected pressedButtons: TButton[];
+export default interface ButtonStates<TButton> {
+  hasAnyButtonPressed(): boolean;
 
-  static readonly EMPTY = Object.freeze(new ButtonStates());
+  isPressed(button: TButton): boolean;
 
-  constructor(pressedButtons: TButton[] = []) {
-    this.pressedButtons = pressedButtons;
-  }
+  setPressed(button: TButton, pressed: boolean): boolean;
 
-  hasAnyButtonPressed() {
-    return this.pressedButtons.length > 0;
-  }
+  reset(): void;
 
-  isPressed(button: TButton) {
-    return this.pressedButtons.includes(button);
-  }
+  equals(other: any): boolean;
 
-  setPressed(button: TButton, pressed: boolean) {
-    const i = this.pressedButtons.indexOf(button);
-    if (i > -1 == pressed) {
-      return false;
-    }
-    if (pressed) {
-      this.pressedButtons.push(button);
-    } else {
-      this.pressedButtons.splice(i, 1);
-    }
-    return true;
-  }
-
-  clone() {
-    return new ButtonStates<TButton>([...this.pressedButtons]);
-  }
+  clone(): ButtonStates<TButton>;
 }
