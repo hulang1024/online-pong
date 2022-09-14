@@ -54,6 +54,26 @@ export default class Vector2 {
                      (this.y - to.y) * (this.y - to.y));
   }
 
+  sign() {
+    return new Vector2(Math.sign(this.x), Math.sign(this.y));
+  }
+
+  normalize() {
+    let l = this.x * this.x + this.y * this.y;
+    if (l != 0) {
+      l = Math.sqrt(l);
+      this.x /= l;
+      this.y /= l;
+    }
+  }
+  
+  normalized() {
+    const v = this.clone();
+    v.normalize();
+    return v;
+  }
+
+
   clone() {
     return new Vector2(this.x, this.y);
   }

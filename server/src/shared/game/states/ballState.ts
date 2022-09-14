@@ -44,10 +44,10 @@ export default class BallState {
     for (let i = 0; i < paddleStates.length; i++) {
       const paddleState = paddleStates[i];
       if (checkCircleAndRectCollision(this, paddleState)) {
-        this.position.y -= this.vel.y * delta;
+        this.position.y -= this.vel.y * delta + Math.sign(this.vel.y) * this.radius;
         this.position.x -= this.vel.x * delta;
-        this.vel.x = -this.vel.x * randomRange(1, 1.5);
-        this.vel.y = -this.vel.y * randomRange(1, 1.5);
+        this.vel.x = -Math.sign(this.vel.x) * randomRange(this.minSpeed, this.maxSpeed);
+        this.vel.y = -this.vel.y * randomRange(1, 1.3);
         this.stateSystem.handlePaddleHit(paddleState);
         break;
       }
@@ -62,20 +62,20 @@ export default class BallState {
 
     if (this.position.x - this.radius < 0) {
       this.position.x = this.radius;
-      this.vel.x = -this.vel.x * randomRange(1, 1.5);
+      this.vel.x = -this.vel.x;
       this.stateSystem.handleBorderHit(Vector2.LEFT);
     } else if (this.position.x > this.viewport.width - this.radius) {
       this.position.x = this.viewport.width - this.radius;
-      this.vel.x = -this.vel.x * randomRange(1, 1.5);
+      this.vel.x = -this.vel.x;
       this.stateSystem.handleBorderHit(Vector2.RIGHT);
     }
     if (this.position.y - this.radius < 0) {
       this.position.y = this.radius;
-      this.vel.y = -this.vel.y * randomRange(1, 1.5);
+      this.vel.y = -this.vel.y;
       this.stateSystem.handleBorderHit(Vector2.UP);
     } else if (this.position.y > this.viewport.height - this.radius) {
       this.position.y = this.viewport.height - this.radius;
-      this.vel.y = -this.vel.y * randomRange(1, 1.5);
+      this.vel.y = -this.vel.y;
       this.stateSystem.handleBorderHit(Vector2.DOWN);
     }
   }

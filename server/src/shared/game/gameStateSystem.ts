@@ -4,12 +4,12 @@ import GameButton from "./input/gameButton";
 import PlayerInput from "./input/playerInput";
 import GameStates from "./states";
 import BallState from "./states/ballState";
-import PlayerPaddleState, { Y_OFFSET } from "./states/playerPaddleState";
+import PlayerPaddleState from "./states/playerPaddleState";
 import Viewport from "./viewport";
 import Vector2 from "./vector";
 
 const FPS = 60;
-const S_PER_UPDATE = 1 / FPS;
+export const S_PER_UPDATE = 1 / FPS;
 
 export default class GameStateSystem {
   // 运行在服务器模式还是客户端（行为应该一样，但还是有一些不同）
@@ -24,6 +24,7 @@ export default class GameStateSystem {
   gameState = 'start' as 'start' | 'pause' | 'serve' | 'play'
   private updateLag = 0;
 
+  onUpdate = (delta: number) => {};
   onPaddleHit = (paddleState: PlayerPaddleState) => {};
   onWallHit = (border: Vector2) => {};
   onScore = () => {};
@@ -43,6 +44,7 @@ export default class GameStateSystem {
   initPlayers(playerIds: number[]) {
     const { viewport } = this;
     // 创建Paddle
+    const Y_OFFSET = 10;
     playerIds.forEach((playerId, i) => {
       const paddleState = new PlayerPaddleState(viewport);
       paddleState.playerId = playerId;
@@ -74,19 +76,21 @@ export default class GameStateSystem {
 
   update(delta: number) {
     this.updateLag += delta;
+    // 以固定帧率运行
     while (this.updateLag >= S_PER_UPDATE) {
       if (this.gameState == 'play') {
         this._states.ballState.update(S_PER_UPDATE);
+        this.onUpdate(S_PER_UPDATE);
       }
       this.updateLag -= S_PER_UPDATE;
     }
   }
 
-  applyInputs(inputs: GameStateSystemInput[], delta: number) {
-    inputs.forEach((input) => this.applyInput(input, delta));
+  applyInputs(inputs: GameStateSystemInput[]) {
+    inputs.forEach((input) => this.applyInput(input));
   }
 
-  applyInput(input: GameStateSystemInput, delta: number) {
+  applyInput(input: GameStateSystemInput) {
     if (input instanceof PlayerInput) {
       if (this.gameState == 'play') {
         if (input.buttonStates.isPressed(GameButton.Ok)) {
@@ -94,7 +98,7 @@ export default class GameStateSystem {
         } else {
           const paddleState = this._states.paddleStates.find(
             (p) => p.playerId == input.playerId);
-          paddleState?.update(delta, input.buttonStates);  
+          paddleState?.update(S_PER_UPDATE, input.buttonStates);  
         }
       } else if (this.gameState == 'serve') {
         if (input.buttonStates.isPressed(GameButton.Ok)) {
@@ -103,7 +107,7 @@ export default class GameStateSystem {
         } else {
           const paddleState = this._states.paddleStates.find(
             (p) => p.playerId == input.playerId);
-          paddleState?.update(delta, input.buttonStates);  
+          paddleState?.update(S_PER_UPDATE, input.buttonStates);  
         }
       } else if (this.gameState == 'pause') {
         if (input.buttonStates.isPressed(GameButton.Ok)) {

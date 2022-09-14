@@ -151,7 +151,7 @@ export default class Game {
     } else {
       // 预执行控制玩家的输入
       this.pendingInputs.push(input);
-      this.gameStateSystem.applyInput(input, delta);
+      this.gameStateSystem.applyInput(input);
     }
     this.socketClient.sendBinary(input.encode());
     //console.log('send', JSON.stringify(input));
@@ -170,7 +170,7 @@ export default class Game {
     // 恢复到上次保存的权威状态
     this.gameStateSystem.restore();
     // 开始权威输入
-    this.gameStateSystem.applyInputs(update.inputs, 1 / this.updateFPS);
+    this.gameStateSystem.applyInputs(update.inputs);
     this.gameStateSystem.update(1 / this.updateFPS);
     // 结束权威输入
     // 保存当前权威状态
@@ -181,7 +181,7 @@ export default class Game {
       removeLen++;
     }
     this.pendingInputs.splice(0, removeLen);
-    this.gameStateSystem.applyInputs(this.pendingInputs, 1 / this.updateFPS);
+    this.gameStateSystem.applyInputs(this.pendingInputs);
 
     if (this.gameStateSystem.gameState == 'serve') {
       this.ball.setState(this.gameStateSystem.states.ballState);

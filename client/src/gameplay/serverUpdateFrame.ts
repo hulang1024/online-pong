@@ -39,7 +39,7 @@ export default class ServerUpdateFrame {
         }
         if (input) inputs.push(input);
       }
-      console.log(JSON.stringify(updateFrame));
+      //console.log(JSON.stringify(updateFrame));
       complete(updateFrame);
     };
     reader.readAsArrayBuffer(data);

@@ -8,7 +8,7 @@ import PongAI from "./bot/pongAI";
 
 export default class GameLoop implements FixedUpdatable {
   mainLoop: MainLoop
-  fps = 30;
+  fps = 40;
   frameNo = 0;
   sPerFrame = 1 / this.fps;
   players: Player[] = [];
@@ -24,6 +24,9 @@ export default class GameLoop implements FixedUpdatable {
       this.ai = game.ai;
 
       this.gameStateSystem = new GameStateSystem(true);
+      this.gameStateSystem.onUpdate = (delta) => {
+        this.ai.forEach((ai) => ai.update(delta));
+      };
       this.gameStateSystem.initPlayers(this.players.map((p) => p.id));
     }
   }
@@ -36,12 +39,10 @@ export default class GameLoop implements FixedUpdatable {
     const { inputBuffer: inputs } = this;
     this.inputBuffer = [];
 
-    this.gameStateSystem.applyInputs(inputs, delta);
+    this.gameStateSystem.applyInputs(inputs);
     this.gameStateSystem.update(delta);
     
     this.sync(inputs);
-
-    this.ai.forEach((ai) => ai.update(delta));
 
     this.frameNo++;
   }
